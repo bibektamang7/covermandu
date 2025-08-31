@@ -14,30 +14,77 @@ datasource db {
 }
 
 model User {
-  id     String   @id @default(cuid())
-  email  String   @unique
-  Review Review[]
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String
+  image     String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  reviews   Review[]
+  cartItems Cart[]
+  wishlist  Wishlist[]
+
+  @@index([email]) 
 }
 
 model Product {
-  id                String   @id @default(cuid())
+  id                String     @id @default(cuid())
   name              String
-  image             String[]
-  price             String
   description       String
-  colors            String[]
+  image             String[]
+  price             Float
+  discount          Int? 
   availableQuantity Int
-  discount          Int?
+  colors            String[]
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
   reviews           Review[]
+  cartItems         Cart[]
+  wishlists         Wishlist[]
+
+  @@index([name]) 
+  @@index([price]) 
+  @@index([availableQuantity]) 
 }
 
 model Review {
   id         String   @id @default(cuid())
   message    String
-  stars      Int
+  stars      Int      @db.SmallInt
+  reviewer   User     @relation(fields: [reviewerId], references: [id])
   reviewerId String
-  reviewedBy User     @relation(fields: [reviewerId], references: [id])
-  Product    Product  @relation(fields: [productId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
   productId  String
-  createdAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([productId]) 
+  @@index([reviewerId])
+}
+
+model Cart {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId]) 
+  @@index([userId])
+  @@index([productId])
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId]) 
+  @@index([userId])
+  @@index([productId])
 }
