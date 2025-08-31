@@ -24,67 +24,73 @@ model User {
   cartItems Cart[]
   wishlist  Wishlist[]
 
-  @@index([email]) 
+  @@index([email])
 }
 
 model Product {
-  id                String     @id @default(cuid())
-  name              String
-  description       String
-  image             String[]
-  price             Float
-  discount          Int? 
-  availableQuantity Int
-  colors            String[]
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  reviews           Review[]
-  cartItems         Cart[]
-  wishlists         Wishlist[]
+  id          String           @id @default(cuid())
+  name        String
+  description String
+  price       Decimal          @db.Decimal(10, 2)
+  discount    Int?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  reviews     Review[]
+  cartItems   Cart[]
+  wishlists   Wishlist[]
+  variants    ProductVariant[]
 
-  @@index([name]) 
-  @@index([price]) 
-  @@index([availableQuantity]) 
+  @@index([name])
+  @@index([price])
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  Product   Product @relation(fields: [productId], references: [id])
+  productId String
+  color     String
+  stock     Int     @db.SmallInt
+  image     String
 }
 
 model Review {
   id         String   @id @default(cuid())
   message    String
   stars      Int      @db.SmallInt
-  reviewer   User     @relation(fields: [reviewerId], references: [id])
+  reviewer   User     @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
   reviewerId String
-  product    Product  @relation(fields: [productId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId  String
   createdAt  DateTime @default(now())
 
-  @@index([productId]) 
+  @@index([productId])
   @@index([reviewerId])
 }
 
 model Cart {
   id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String
   quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, productId]) 
+  @@unique([userId, productId])
   @@index([userId])
   @@index([productId])
 }
 
 model Wishlist {
   id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String
   createdAt DateTime @default(now())
 
-  @@unique([userId, productId]) 
+  @@unique([userId, productId])
   @@index([userId])
   @@index([productId])
 }
