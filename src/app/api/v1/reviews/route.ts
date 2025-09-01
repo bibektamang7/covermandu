@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { createReviewSchema } from "@/validation/review.validation";
+import { verifyMiddleware } from "@/lib/verifyUser";
 
 // POST review
 export async function POST(req: NextRequest) {
@@ -58,6 +59,25 @@ export async function POST(req: NextRequest) {
 		return NextResponse.json(review, { status: 200 });
 	} catch (error) {
 		console.log("failed to post review", error);
+		return NextResponse.json(
+			{ success: false, message: "Internal Server Error" },
+			{ status: 500 }
+		);
+	}
+}
+
+// GET reviews by user
+//TODO: NOT SURE ABOUT THE ROUTE< NEED TO CONSIDER
+export async function GET(req: NextRequest) {
+	try {
+		const user = await verifyMiddleware(req);
+		const reviews = await prisma.review.findMany({
+			where: { reviewerId: user.id },
+			include: { product: true },
+		});
+		return NextResponse.json(reviews);
+	} catch (error) {
+		console.log("failed ot get review by user", error);
 		return NextResponse.json(
 			{ success: false, message: "Internal Server Error" },
 			{ status: 500 }

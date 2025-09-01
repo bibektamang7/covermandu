@@ -13,6 +13,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id        String     @id @default(cuid())
   email     String     @unique
@@ -23,6 +28,8 @@ model User {
   reviews   Review[]
   cartItems Cart[]
   wishlist  Wishlist[]
+
+  role Role @default(USER)
 
   @@index([email])
 }
@@ -51,6 +58,7 @@ model ProductVariant {
   color     String
   stock     Int     @db.SmallInt
   image     String
+  Cart      Cart[]
 }
 
 model Review {
@@ -68,18 +76,20 @@ model Review {
 }
 
 model Cart {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String
-  quantity  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String         @id @default(cuid())
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  productVariantId String
+  quantity         Int
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  Product          Product?       @relation(fields: [productId], references: [id])
+  productId        String?
 
-  @@unique([userId, productId])
+  @@unique([userId, productVariantId])
   @@index([userId])
-  @@index([productId])
+  @@index([productVariantId])
 }
 
 model Wishlist {

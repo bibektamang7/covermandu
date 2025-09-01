@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { createCartSchema } from "@/validation/cart.validation";
+import { verifyMiddleware } from "@/lib/verifyUser";
 
 // POST add to cart
 //TODO: add rate limit
@@ -57,6 +58,37 @@ export async function POST(req: NextRequest) {
 		console.log("Failed to add to cart", error);
 		return NextResponse.json(
 			{ success: false, message: "Interval Server Error" },
+			{ status: 500 }
+		);
+	}
+}
+
+// GET CART OF USER
+
+export async function GET(req: NextRequest) {
+	try {
+		const user = await verifyMiddleware(req);
+		const cart = await prisma.cart.findMany({
+			where: { userId: user.id },
+			include: {
+				productVariant: {
+					include: {
+						Product: true,
+					},
+				},
+			},
+		});
+		if (!cart) {
+			return NextResponse.json(
+				{ success: false, message: "Failed to get carts" },
+				{ status: 400 }
+			);
+		}
+		return NextResponse.json(cart, { status: 200 });
+	} catch (error: any) {
+		console.log("Failed to get carts", error);
+		return NextResponse.json(
+			{ success: false, message: error.message },
 			{ status: 500 }
 		);
 	}
