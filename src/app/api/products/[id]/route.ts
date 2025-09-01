@@ -1,1 +1,0 @@
-// GET / PUT /DELETE product by id
