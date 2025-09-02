@@ -58,7 +58,10 @@ model ProductVariant {
   color     String
   stock     Int     @db.SmallInt
   image     String
+  sku       String  @unique
   Cart      Cart[]
+
+  @@index([sku])
 }
 
 model Review {
