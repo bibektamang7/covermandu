@@ -36,7 +36,7 @@ const majorCities = [
 
 export const DeliverySection = () => {
 	return (
-		<section className="py-20 bg-gradient-to-br from-accent/10 via-background to-primary/5">
+		<section className="py-20 px-16 bg-gradient-to-br from-accent/10 via-background to-primary/5">
 			<div className="container mx-auto px-6">
 				<div className="grid lg:grid-cols-2 gap-12 items-center">
 					{/* Left Content */}

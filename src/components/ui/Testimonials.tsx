@@ -54,7 +54,7 @@ const testimonials = [
 
 export const TestimonialsSection = () => {
 	return (
-		<section className="py-20 bg-gradient-to-b from-background to-muted/20">
+		<section className="py-20 px-16 bg-gradient-to-b from-background to-muted/20">
 			<div className="container mx-auto px-6">
 				{/* Section Header */}
 				<div className="text-center mb-16 space-y-4">

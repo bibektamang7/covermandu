@@ -173,7 +173,6 @@
 #root {
 	max-width: 1280px;
 	margin: 0 auto;
-	padding: 2rem;
 	text-align: center;
 }
 
@@ -218,13 +217,13 @@
 }
 
 body {
-	background-color: var(--color-background);
 	color: var(--color-foreground);
 	font-family: var(--font-family-sans);
 	font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 html {
+	background-color: var(--color-background);
 	scroll-behavior: smooth;
 }
 
@@ -261,9 +260,7 @@ html {
 	);
 	color: var(--color-primary-foreground);
 	padding: 1rem;
-	border-radius: 9999px;
 	font-weight: 600;
-	font-size: 1.125rem;
 	transition: all 0.3s ease;
 	box-shadow: var(--box-shadow-lg);
 }
