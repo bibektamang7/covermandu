@@ -8,14 +8,18 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Navigation } from "@/components/Navigation";
-import { Footer } from "@/components/Footer";
+import { signIn } from "next-auth/react";
 
 export default function Login() {
 	const [isLogin, setIsLogin] = useState(true);
+	const handleAuth = async () => {
+		try {
+			await signIn("google", { redirectTo: "/dashboard" });
+		} catch (error) {
+			console.error("Failed to authenticate", error);
+		}
+	};
 
 	return (
 		<div className="py-12 min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
@@ -35,8 +39,9 @@ export default function Login() {
 							</CardHeader>
 							<CardContent className="space-y-4">
 								<Button
+									onClick={handleAuth}
 									variant="outline"
-									className="w-full h-12 text-base font-medium hover:bg-accent/50 border-2"
+									className="hover:cursor-pointer w-full h-12 text-base font-medium hover:bg-accent/50 border-2"
 								>
 									<svg
 										className="mr-2 h-5 w-5"
@@ -68,17 +73,13 @@ export default function Login() {
 									</div>
 								</div>
 
-								<Button className="w-full h-12 text-base font-medium">
-									{isLogin ? "Sign In" : "Create Account"}
-								</Button>
-
 								<div className="text-center text-sm text-muted-foreground">
 									{isLogin
 										? "Don't have an account? "
 										: "Already have an account? "}
 									<Button
 										variant="link"
-										className="p-0 h-auto text-sm font-medium text-primary"
+										className="hover:cursor-pointer p-0 h-auto text-sm font-medium text-primary"
 										onClick={() => setIsLogin(!isLogin)}
 									>
 										{isLogin ? "Sign up" : "Sign in"}
