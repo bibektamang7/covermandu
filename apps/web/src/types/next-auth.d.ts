@@ -4,6 +4,9 @@ declare module "next-auth" {
 	interface Session extends DefaultUser {
 		accessToken?: string;
 	}
+	interface User {
+		token: string
+	}
 }
 
 declare module "next-auth/jwt" {
