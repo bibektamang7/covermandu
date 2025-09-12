@@ -1,0 +1,229 @@
+import { Footer } from "@/components/Footer";
+import { Navigation } from "@/components/Navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+
+const Cart = () => {
+	const cartItems = [
+		{
+			id: 1,
+			name: "iPhone 15 Pro Clear Case",
+			price: 2499,
+			quantity: 1,
+			image: "/api/placeholder/100/100",
+			variant: "Clear",
+		},
+		{
+			id: 2,
+			name: "Screen Protector (2-Pack)",
+			price: 899,
+			quantity: 2,
+			image: "/api/placeholder/100/100",
+			variant: "Tempered Glass",
+		},
+		{
+			id: 3,
+			name: "Wireless Charger",
+			price: 3499,
+			quantity: 1,
+			image: "/api/placeholder/100/100",
+			variant: "15W Fast Charging",
+		},
+	];
+
+	const subtotal = cartItems.reduce(
+		(sum, item) => sum + item.price * item.quantity,
+		0
+	);
+	const shipping = 150;
+	const total = subtotal + shipping;
+
+	return (
+		<div className="min-h-screen">
+			<Navigation />
+			<section className="pt-12 px-16">
+				<div className="pt-8 pb-4 border-b border-border px-4">
+					<div className="container mx-auto">
+						<h1 className="text-2xl font-bold">Shopping Cart</h1>
+					</div>
+				</div>
+
+				<div className="container mx-auto pb-8 px-4">
+					<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+						<div className="lg:col-span-2">
+							<div className="space-y-4">
+								{cartItems.map((item) => (
+									<Card key={item.id}>
+										<CardContent className="p-6">
+											<div className="flex items-center gap-4">
+												<div className="w-20 h-20 rounded-lg overflow-hidden bg-muted">
+													<img
+														src={item.image}
+														alt={item.name}
+														className="w-full h-full object-cover"
+													/>
+												</div>
+
+												<div className="flex-1">
+													<h3 className="font-semibold">{item.name}</h3>
+													<p className="text-sm text-muted-foreground mt-1">
+														{item.variant}
+													</p>
+													<p className="text-lg font-bold text-primary mt-2">
+														Rs. {item.price.toLocaleString()}
+													</p>
+												</div>
+
+												<div className="flex items-center gap-2">
+													<Button
+														variant="outline"
+														size="sm"
+														className="w-8 h-8 p-0"
+													>
+														<Minus className="w-4 h-4" />
+													</Button>
+													<span className="w-8 text-center font-medium">
+														{item.quantity}
+													</span>
+													<Button
+														variant="outline"
+														size="sm"
+														className="w-8 h-8 p-0"
+													>
+														<Plus className="w-4 h-4" />
+													</Button>
+												</div>
+
+												<Button
+													variant="ghost"
+													size="sm"
+													className="text-destructive hover:text-destructive"
+												>
+													<Trash2 className="w-4 h-4" />
+												</Button>
+											</div>
+										</CardContent>
+									</Card>
+								))}
+							</div>
+
+							<div className="mt-8">
+								<Button
+									variant="outline"
+									className="w-full sm:w-auto"
+								>
+									<ShoppingBag className="w-4 h-4 mr-2" />
+									Continue Shopping
+								</Button>
+							</div>
+						</div>
+
+						<div className="lg:col-span-1">
+							<Card className="sticky top-24">
+								<CardHeader>
+									<CardTitle>Order Summary</CardTitle>
+								</CardHeader>
+								<CardContent className="space-y-4">
+									<div className="flex justify-between">
+										<span>Subtotal</span>
+										<span>Rs. {subtotal.toLocaleString()}</span>
+									</div>
+									<div className="flex justify-between">
+										<span>Shipping</span>
+										<span>Rs. {shipping}</span>
+									</div>
+									<Separator />
+									<div className="flex justify-between text-lg font-bold">
+										<span>Total</span>
+										<span className="text-primary">
+											Rs. {total.toLocaleString()}
+										</span>
+									</div>
+
+									<div className="space-y-3 mt-6">
+										<Button
+											className="w-full btn-hero"
+											size="lg"
+										>
+											Proceed to Checkout
+										</Button>
+										<Button
+											variant="outline"
+											className="w-full"
+										>
+											Save for Later
+										</Button>
+									</div>
+								</CardContent>
+							</Card>
+						</div>
+					</div>
+				</div>
+
+				{/* Recommended Products */}
+				<section className="py-16 bg-muted/50">
+					<div className="container mx-auto px-6">
+						<h2 className="text-2xl font-bold mb-8">You Might Also Like</h2>
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+							{[
+								{
+									name: "Phone Stand",
+									price: "Rs. 1,299",
+									image: "/api/placeholder/200/200",
+								},
+								{
+									name: "Car Mount",
+									price: "Rs. 1,999",
+									image: "/api/placeholder/200/200",
+								},
+								{
+									name: "Power Bank",
+									price: "Rs. 4,999",
+									image: "/api/placeholder/200/200",
+								},
+								{
+									name: "Cable Organizer",
+									price: "Rs. 699",
+									image: "/api/placeholder/200/200",
+								},
+							].map((product, index) => (
+								<Card
+									key={index}
+									className="group hover:shadow-md transition-all duration-300"
+								>
+									<CardContent className="p-4">
+										<div className="aspect-square overflow-hidden rounded-lg mb-4">
+											<img
+												src={product.image}
+												alt={product.name}
+												className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+											/>
+										</div>
+										<h3 className="font-semibold mb-2 text-sm">
+											{product.name}
+										</h3>
+										<p className="text-primary font-bold mb-3">
+											{product.price}
+										</p>
+										<Button
+											size="sm"
+											variant="outline"
+											className="w-full"
+										>
+											Add to Cart
+										</Button>
+									</CardContent>
+								</Card>
+							))}
+						</div>
+					</div>
+				</section>
+			</section>
+			<Footer />
+		</div>
+	);
+};
+
+export default Cart;
