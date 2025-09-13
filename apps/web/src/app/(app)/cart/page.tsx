@@ -12,7 +12,7 @@ const Cart = () => {
 			name: "iPhone 15 Pro Clear Case",
 			price: 2499,
 			quantity: 1,
-			image: "/api/placeholder/100/100",
+			image: "",
 			variant: "Clear",
 		},
 		{
@@ -20,7 +20,7 @@ const Cart = () => {
 			name: "Screen Protector (2-Pack)",
 			price: 899,
 			quantity: 2,
-			image: "/api/placeholder/100/100",
+			image: "",
 			variant: "Tempered Glass",
 		},
 		{
@@ -28,7 +28,7 @@ const Cart = () => {
 			name: "Wireless Charger",
 			price: 3499,
 			quantity: 1,
-			image: "/api/placeholder/100/100",
+			image: "",
 			variant: "15W Fast Charging",
 		},
 	];
@@ -171,22 +171,22 @@ const Cart = () => {
 								{
 									name: "Phone Stand",
 									price: "Rs. 1,299",
-									image: "/api/placeholder/200/200",
+									image: "",
 								},
 								{
 									name: "Car Mount",
 									price: "Rs. 1,999",
-									image: "/api/placeholder/200/200",
+									image: "",
 								},
 								{
 									name: "Power Bank",
 									price: "Rs. 4,999",
-									image: "/api/placeholder/200/200",
+									image: "",
 								},
 								{
 									name: "Cable Organizer",
 									price: "Rs. 699",
-									image: "/api/placeholder/200/200",
+									image: "",
 								},
 							].map((product, index) => (
 								<Card

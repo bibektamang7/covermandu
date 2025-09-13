@@ -100,7 +100,7 @@ const Dashboard = () => {
 							<CardHeader className="text-center">
 								<Avatar className="w-20 h-20 mx-auto mb-4">
 									<AvatarImage
-										src="/api/placeholder/80/80"
+										src=""
 										alt="User"
 									/>
 									<AvatarFallback>RS</AvatarFallback>

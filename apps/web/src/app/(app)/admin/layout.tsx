@@ -1,9 +1,28 @@
-import React from 'react'
+import { AdminSidebar } from "@/components/AdminSidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import React from "react";
 
-const layout = () => {
-  return (
-	<div>layout</div>
-  )
-}
+const layout = ({ children }: { children: React.ReactNode }) => {
+	return (
+		<SidebarProvider>
+			<div className="min-h-screen flex w-full">
+				<AdminSidebar />
 
-export default layout
+				<div className="flex-1 flex flex-col">
+					{/* Header */}
+					<header className="h-16 border-b bg-background flex items-center px-6">
+						<SidebarTrigger />
+						<div className="ml-4">
+							<h1 className="text-xl font-semibold">Admin Dashboard</h1>
+						</div>
+					</header>
+
+					{/* Main Content */}
+					<main className="flex-1 p-6 bg-muted/30">{children}</main>
+				</div>
+			</div>
+		</SidebarProvider>
+	);
+};
+
+export default layout;

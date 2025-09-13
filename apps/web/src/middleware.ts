@@ -4,14 +4,17 @@ import { auth } from "@/app/api/auth/[...nextauth]/auth";
 async function middleware(req: NextRequest) {
 	const session = await auth();
 	const path = req.nextUrl.pathname;
+	console.log("this ispath ", path);
 
-	const isPublicPath = path === "/" || path === "/login";
+	const isPublicPath = path === "/signup" || path === "/login";
 
 	if (isPublicPath && session) {
 		return NextResponse.redirect(new URL("/dashboard", req.url));
 	}
+	const isPrivatePath =
+		path.startsWith("/dashboard") || path.startsWith("/cart");
 
-	if (!isPublicPath && !session) {
+	if (!isPublicPath && !session && isPrivatePath) {
 		return NextResponse.redirect(new URL("/login", req.url));
 	}
 
@@ -19,7 +22,7 @@ async function middleware(req: NextRequest) {
 }
 
 export const config = {
-	matcher: ["/login", "/dashboard", "/"],
+	matcher: ["/cart", "/login", "/dashboard", "/"],
 };
 
 export default middleware;

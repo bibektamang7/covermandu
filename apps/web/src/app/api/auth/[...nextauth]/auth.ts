@@ -49,8 +49,6 @@ const result = NextAuth({
 				}
 
 				try {
-					console.log(`Attempting to login user: ${profile.email}`);
-
 					const loginResponse = await retryApiCall(() =>
 						circuitBreaker.call(() =>
 							apiClient.post(`${backendURL}/users/login`, {
@@ -59,10 +57,10 @@ const result = NextAuth({
 							})
 						)
 					);
-
-					console.log(`Login successful for user: ${profile.email}`);
+					console.log("Login in successfull for user", loginResponse.data.user);
 					user.id = loginResponse.data.user.id;
 					user.token = loginResponse.data.token;
+					user.role = loginResponse.data.user.role;
 				} catch (error: any) {
 					console.error(
 						`Login failed for user: ${profile.email}`,
@@ -88,9 +86,12 @@ const result = NextAuth({
 								)
 							);
 
-							console.log(`Registration successful for user: ${profile.email}`);
+							console.log(
+								`Registration successful for user: ${signUpResponse.data.user}`
+							);
 							user.id = signUpResponse.data.user.id;
 							user.token = signUpResponse.data.token;
+							user.role = signUpResponse.data.user.role;
 						} catch (registerError: any) {
 							console.error(
 								`Registration failed for user: ${profile.email}`,
