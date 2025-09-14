@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma } from "../db/index";
+import { prisma } from "db";
 import { createReviewSchema } from "../validation/review.validation";
 
 export const createReview = async (req: Request, res: Response) => {
@@ -19,7 +19,7 @@ export const createReview = async (req: Request, res: Response) => {
 		}
 		res.status(200).json({
 			message: "Review created successfully",
-			data: { review: review },
+			review,
 		});
 	} catch (error: any) {
 		console.error("Failed to create review", error);
@@ -50,7 +50,7 @@ export const getReviewsByProduct = async (req: Request, res: Response) => {
 			take: limit,
 		});
 
-		res.status(200).json({ data: { reviews } });
+		res.status(200).json(reviews);
 	} catch (error: any) {
 		console.error("Failed to get reviews", error);
 		if (error.code === "P2023") {
@@ -67,7 +67,7 @@ export const getUserReviews = async (req: Request, res: Response) => {
 			where: { reviewerId: req.user.id },
 			include: { product: true },
 		});
-		res.status(200).json({ data: { reviews } });
+		res.status(200).json(reviews);
 	} catch (error) {
 		console.error("Failed to get user reviews", error);
 		res.status(500).json({ message: "Internal server error" });

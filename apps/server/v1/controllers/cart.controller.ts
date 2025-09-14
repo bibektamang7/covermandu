@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma } from "../db/index";
+import { prisma } from "db";
 import { addToCartSchema } from "../validation/cart.validation";
 
 export const addToCart = async (req: Request, res: Response) => {
@@ -29,7 +29,11 @@ export const addToCart = async (req: Request, res: Response) => {
 			where: {
 				userId_productVariantId: { userId: req.user.id, productVariantId },
 			},
-			update: { quantity: quantity },
+			update: {
+				quantity: {
+					increment: 1,
+				},
+			},
 			create: {
 				userId: req.user.id,
 				productVariantId: productVariant.id,
@@ -67,12 +71,17 @@ export const updateCartItem = async (req: Request, res: Response) => {
 		res.status(400).json({ message: "Cart ID and quantity are required" });
 		return;
 	}
+	if (quantity !== -1 && quantity !== 1) {
+		res.status(400).json({ message: "Invalid quantity" });
+		return;
+	}
 
 	try {
 		const cart = await prisma.cart.findUnique({
 			where: { id: cartId, userId: req.user.id },
 			include: { productVariant: true },
 		});
+		console.log("this is cart");
 		if (!cart) {
 			res.status(404).json({ message: "Cart item not found" });
 			return;
@@ -85,7 +94,9 @@ export const updateCartItem = async (req: Request, res: Response) => {
 		const updatedCart = await prisma.cart.update({
 			where: { id: cartId },
 			data: {
-				quantity: quantity,
+				quantity: {
+					increment: quantity,
+				},
 			},
 		});
 		if (!updatedCart) {
@@ -108,10 +119,23 @@ export const deleteCartItem = async (req: Request, res: Response) => {
 	}
 
 	try {
-		const deletedCart = await prisma.cart.deleteMany({
-			where: { id: cartId, userId: req.user.id },
+		const cart = await prisma.cart.findUnique({
+			where: {
+				id: cartId,
+			},
 		});
-		if (deletedCart.count === 0) {
+		if (!cart) {
+			res.status(404).json({ message: "Cart not found" });
+			return;
+		}
+		if (cart.userId.toString() !== req.user.id.toString()) {
+			res.status(401).json({ message: "Unauthorized to delete cart" });
+			return;
+		}
+		const deletedCart = await prisma.cart.delete({
+			where: { id: cart.id },
+		});
+		if (!deletedCart) {
 			res.status(400).json({ message: "Failed to delete cart item" });
 			return;
 		}
@@ -121,4 +145,3 @@ export const deleteCartItem = async (req: Request, res: Response) => {
 		res.status(500).json({ message: "Internal server error" });
 	}
 };
-

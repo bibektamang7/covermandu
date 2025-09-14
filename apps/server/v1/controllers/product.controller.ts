@@ -1,10 +1,11 @@
 import type { Request, Response } from "express";
-import { prisma } from "../db/index";
+import { prisma } from "db";
 import {
 	createProductSchema,
 	updateProductSchema,
 } from "../validation/product.validation";
 import jwt from "jsonwebtoken";
+import { uint32 } from "zod";
 
 export const getProducts = async (req: Request, res: Response) => {
 	try {
@@ -13,10 +14,9 @@ export const getProducts = async (req: Request, res: Response) => {
 		const skip = (page - 1) * limit;
 		const search = (req.query.search as string) || "";
 
-		const sortBy =
-			(req.query.sortBy as string) ||
-			("createdAt" as keyof typeof prisma.product);
+		const sortBy = (req.query.sortBy as string) || "createdAt";
 		const order = (req.query.order as string) || ("desc" as "asc" | "desc");
+
 		const products = await prisma.product.findMany({
 			where: {
 				name: {
@@ -38,7 +38,7 @@ export const getProducts = async (req: Request, res: Response) => {
 		});
 
 		res.status(200).json({
-			data: products,
+			products,
 			page,
 			totalPages: Math.ceil(total / limit),
 			total,
@@ -57,9 +57,13 @@ const generateSKU = (): string => {
 
 export const createProduct = async (req: Request, res: Response) => {
 	try {
-		const parsed = createProductSchema.safeParse(req.body);
+		const parsed = createProductSchema.safeParse({
+			...req.body,
+			price: parseInt(req.body.price, 10),
+		});
 
 		if (!parsed.success) {
+			console.log("this is error", parsed.error.message);
 			res.status(400).json({ message: "Validation error" });
 			return;
 		}
@@ -151,9 +155,7 @@ export const getProductById = async (req: Request, res: Response) => {
 			const wishlistedVariant = await prisma.wishlist.findFirst({
 				where: {
 					userId: req.user.id,
-					productVariant: {
-						productId: product.id,
-					},
+					productId: product.id,
 				},
 				select: { id: true },
 			});

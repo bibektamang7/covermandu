@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma } from "../db/index";
+import { prisma } from "db";
 import {
 	loginUserSchema,
 	registerUserSchema,
@@ -21,6 +21,7 @@ export const loginUser = async (req: Request, res: Response) => {
 			res.status(404).json({ message: "User not found" });
 			return;
 		}
+		console.log("this is token ", process.env.TOKEN_SECRET)
 		const token = jwt.sign({ id: user.id }, process.env.TOKEN_SECRET!, {
 			expiresIn: "7d",
 		});

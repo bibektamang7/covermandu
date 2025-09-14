@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma } from "../db/index";
+import { prisma } from "db";
 
 export const getWishlistItems = async (req: Request, res: Response) => {
 	try {
@@ -15,24 +15,24 @@ export const getWishlistItems = async (req: Request, res: Response) => {
 
 export const addToWishList = async (req: Request, res: Response) => {
 	try {
-		const { productVariantId } = req.body;
-		if (!productVariantId) {
+		const { productId } = req.body;
+		if (!productId) {
 			res.status(400).json({ message: "Product ID is required" });
 			return;
 		}
 		const wishlist = await prisma.wishlist.upsert({
 			where: {
-				userId_productVariantId: { userId: req.user.id, productVariantId },
+				userId_productId: { userId: req.user.id, productId },
 			},
 			update: {},
-			create: { userId: req.user.id, productVariantId },
+			create: { userId: req.user.id, productId },
 		});
 		if (!wishlist) {
 			res.status(400).json({ message: "Failed to update wishlist" });
 			return;
 		}
 
-		res.status(200).json({ message: "Product added to wishlist" });
+		res.status(200).json({ message: "Product added to wishlist", wishlist });
 	} catch (error) {
 		console.error("Failed to add to wishlist", error);
 		res.status(500).json({ message: "Internal server error" });
@@ -43,7 +43,7 @@ export const getWishlist = async (req: Request, res: Response) => {
 	try {
 		const wishlists = await prisma.wishlist.findMany({
 			where: { userId: req.user.id },
-			include: { productVariant: true },
+			include: { product: true },
 		});
 
 		res.status(200).json(wishlists);
