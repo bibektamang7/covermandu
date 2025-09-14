@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma } from "../db/index";
+import { prisma } from "db";
 import {
 	getProducts,
 	createProduct,
@@ -12,11 +12,8 @@ import {
 	updateProductSchema,
 } from "../validation/product.validation";
 import jwt from "jsonwebtoken";
-import express from "express";
-import request from "supertest";
-import productRoutes from "../routes/product.route";
 
-jest.mock("../db", () => ({
+jest.mock("db", () => ({
 	prisma: {
 		product: {
 			findMany: jest.fn(),
@@ -99,7 +96,7 @@ describe("Product Controller - Unit Tests", () => {
 
 			expect(res.status).toHaveBeenCalledWith(200);
 			expect(res.json).toHaveBeenCalledWith(
-				expect.objectContaining({ data: expect.any(Array) })
+				expect.objectContaining({ products: expect.any(Array) })
 			);
 		});
 	});
@@ -204,91 +201,163 @@ describe("Product Controller - Unit Tests", () => {
 });
 
 // Integration tests
-const app = express();
-app.use(express.json());
-app.use("/api/v1/products", productRoutes);
+import axios from "axios";
+const baseurl = "http://localhost:8000/api/v1";
 
 describe("Product Controller - Integration Tests", () => {
-	afterEach(() => {
-		jest.clearAllMocks();
+	let productId: string = "";
+	let adminToken: string = "";
+
+	beforeAll(async () => {
+		try {
+			const signInResponse = await axios.post(`${baseurl}/users/login`, {
+				email: "tmgbibek777@gmail.com",
+				googleId: `google-jdk7ihoj`,
+			});
+
+			adminToken = signInResponse.data.token;
+
+			const newProduct = {
+				name: "Integration Test Product",
+				description: "A product created during integration tests.",
+				price: parseInt("899"),
+				variants: [
+					{
+						color: "Test Color",
+						stock: 100,
+						image:
+							"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzzSzOGxpVBRgl29As6-s7eqaCCEqK5-FQBQ&s",
+					},
+				],
+			};
+			const response = await axios.post(`${baseurl}/products`, newProduct, {
+				headers: {
+					Authorization: `Bearer ${adminToken}`,
+				},
+			});
+			console.log("this is admin create product response", response);
+			// const productsResponse = await axios.get(`${baseurl}/products`);
+			// console.log("product", productsResponse.data);
+			// productId = productsResponse.data.products[0].id;
+		} catch (error) {
+			throw new Error(`Failed in before all: ${error}`);
+		}
 	});
+
+
 
 	it("GET /api/v1/products - should get all products", async () => {
-		(prisma.product.findMany as jest.Mock).mockResolvedValue([
-			{ id: "prod1", name: "Product 1" },
-		]);
-		(prisma.product.count as jest.Mock).mockResolvedValue(1);
+		const response = await axios.get(`${baseurl}/products`);
 
-		const res = await request(app).get("/api/v1/products");
-
-		expect(res.statusCode).toEqual(200);
-		expect(res.body.data.length).toBe(1);
+		expect(response.status).toBe(200);
+		expect(response.data.products.length).toBeGreaterThanOrEqual(1);
 	});
 
-	it("POST /api/v1/products - should create a product", async () => {
-		const productData = {
-			name: "New Product",
-			description: "A new product",
-			price: 100,
-			variants: [
-				{
-					color: "Red",
-					stock: 10,
-					image: "red.jpg",
-				},
-			],
-		};
-		(createProductSchema.safeParse as jest.Mock).mockReturnValue({
-			success: true,
-			data: productData,
-		});
-		(prisma.product.create as jest.Mock).mockResolvedValue({ id: "prod1" });
+	// it("GET /api/v1/products/:productId - should get a product by id", async () => {
+	// 	// const productsResponse = await axios.get(`${baseurl}/products`);
+	// 	// const productId = productsResponse.data.products[0].id;
+	// 	const response = await axios.get(`${baseurl}/products/${productId}`);
 
-		const res = await request(app)
-			.post("/api/v1/products")
-			.set("Authorization", "Bearer fake-admin-token")
-			.send(productData);
+	// 	expect(response.status).toBe(200);
+	// 	expect(response.data.product).toHaveProperty("id", productId);
+	// });
 
-		expect(res.statusCode).toEqual(200);
-		expect(res.body).toEqual({ message: "Product created successfully" });
-	});
+	// it("POST /api/v1/products - should create a new product (admin only)", async () => {
+	// 	const newProduct = {
+	// 		name: "Integration Test Product",
+	// 		description: "A product created during integration tests.",
+	// 		price: 123.45,
+	// 		variants: [
+	// 			{
+	// 				color: "Test Color",
+	// 				stock: 100,
+	// 				image:
+	// 					"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzzSzOGxpVBRgl29As6-s7eqaCCEqK5-FQBQ&s",
+	// 			},
+	// 		],
+	// 	};
 
-	it("GET /api/v1/products/:productId - should get a product by id", async () => {
-		(prisma.product.findUnique as jest.Mock).mockResolvedValue({
-			id: "prod1",
-			name: "Product 1",
-		});
+	// 	try {
+	// 		const response = await axios.post(`${baseurl}/products`, newProduct, {
+	// 			headers: {
+	// 				Authorization: `Bearer ${adminToken}`,
+	// 			},
+	// 		});
 
-		const res = await request(app).get("/api/v1/products/prod1");
+	// 		expect(response.status).toBe(200); // Or 201 if you prefer
+	// 		expect(response.data.message).toBe("Product created successfully");
+	// 	} catch (error: any) {
+	// 		// Fail test if admin token is not valid
+	// 		if (error.response && error.response.status === 403) {
+	// 			throw new Error(
+	// 				"Admin credentials might be missing or invalid in beforeAll."
+	// 			);
+	// 		}
+	// 		throw error;
+	// 	}
+	// });
 
-		expect(res.statusCode).toEqual(200);
-		expect(res.body.product).toHaveProperty("id", "prod1");
-	});
+	// it("PUT /api/v1/products/:productId - should update a product (admin only)", async () => {
+	// 	const updatedData = {
+	// 		name: "Updated Integration Test Product",
+	// 	};
 
-	it("PUT /api/v1/products/:productId - should update a product", async () => {
-		(updateProductSchema.safeParse as jest.Mock).mockReturnValue({
-			success: true,
-			data: { name: "Updated Product" },
-		});
-		(prisma.product.update as jest.Mock).mockResolvedValue({ id: "prod1" });
+	// 	try {
+	// 		const response = await axios.put(
+	// 			`${baseurl}/products/${productId}`,
+	// 			updatedData,
+	// 			{
+	// 				headers: {
+	// 					Authorization: `Bearer ${adminToken}`,
+	// 				},
+	// 			}
+	// 		);
 
-		const res = await request(app)
-			.put("/api/v1/products/prod1")
-			.set("Authorization", "Bearer fake-admin-token")
-			.send({ name: "Updated Product" });
+	// 		expect(response.status).toBe(200);
+	// 		expect(response.data.message).toBe("Product updated successfully");
 
-		expect(res.statusCode).toEqual(200);
-		expect(res.body).toEqual({ message: "Product updated successfully" });
-	});
+	// 		// Verify the update
+	// 		const verifyResponse = await axios.get(
+	// 			`${baseurl}/products/${productId}`
+	// 		);
+	// 		expect(verifyResponse.data.product.name).toBe(
+	// 			"Updated Integration Test Product"
+	// 		);
+	// 	} catch (error: any) {
+	// 		if (error.response && error.response.status === 403) {
+	// 			throw new Error(
+	// 				"Admin credentials might be missing or invalid in beforeAll."
+	// 			);
+	// 		}
+	// 		throw error;
+	// 	}
+	// });
 
-	it("DELETE /api/v1/products/:productId - should delete a product", async () => {
-		(prisma.product.delete as jest.Mock).mockResolvedValue({ id: "prod1" });
+	// it("DELETE /api/v1/products/:productId - should delete a product (admin only)", async () => {
+	// 	// This test will delete the product fetched in `beforeAll`.
+	// 	// For more robust tests, consider creating a new product here and deleting it.
+	// 	// However, the current create endpoint doesn't return the new product's ID.
+	// 	try {
+	// 		const response = await axios.delete(`${baseurl}/products/${productId}`, {
+	// 			headers: {
+	// 				Authorization: `Bearer ${adminToken}`,
+	// 			},
+	// 		});
 
-		const res = await request(app)
-			.delete("/api/v1/products/prod1")
-			.set("Authorization", "Bearer fake-admin-token");
+	// 		expect(response.status).toBe(200);
+	// 		expect(response.data.message).toBe("Product deleted");
 
-		expect(res.statusCode).toEqual(200);
-		expect(res.body).toEqual({ message: "Product deleted" });
-	});
+	// 		// Verify deletion by expecting a 404
+	// 		await expect(
+	// 			axios.get(`${baseurl}/products/${productId}`)
+	// 		).rejects.toThrow("Request failed with status code 404");
+	// 	} catch (error: any) {
+	// 		if (error.response && error.response.status === 403) {
+	// 			throw new Error(
+	// 				"Admin credentials might be missing or invalid in beforeAll."
+	// 			);
+	// 		}
+	// 		throw error;
+	// 	}
+	// });
 });

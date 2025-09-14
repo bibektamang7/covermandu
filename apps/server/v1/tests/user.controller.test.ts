@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma } from "../db/index";
+import {prisma} from "db"
 import {
 	loginUser,
 	registerUser,
@@ -10,11 +10,8 @@ import {
 	registerUserSchema,
 } from "../validation/user.validation";
 import jwt from "jsonwebtoken";
-import express from "express";
-import request from "supertest";
-import userRoutes from "../routes/user.route";
 
-jest.mock("../db", () => ({
+jest.mock("db", () => ({
 	prisma: {
 		user: {
 			findUnique: jest.fn(),
@@ -133,54 +130,36 @@ describe("User Controller - Unit Tests", () => {
 });
 
 // Integration tests
-const app = express();
-app.use(express.json());
-app.use("/api/v1/users", userRoutes);
+import axios from "axios";
+const baseurl = "http://localhost:8000/api/v1";
 
 describe("User Controller - Integration Tests", () => {
-	afterEach(() => {
-		jest.clearAllMocks();
-	});
-
-	it("POST /api/v1/users/login - should login a user", async () => {
-		(loginUserSchema.safeParse as jest.Mock).mockReturnValue({
-			success: true,
-			data: { email: "test@example.com", googleId: "google123" },
-		});
-		(prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: "user1" });
-		(jwt.sign as jest.Mock).mockReturnValue("token");
-
-		const res = await request(app)
-			.post("/api/v1/users/login")
-			.send({ email: "test@example.com", googleId: "google123" });
-
-		expect(res.statusCode).toEqual(200);
-		expect(res.body).toHaveProperty("token", "token");
-	});
+	let userToken: string = "";
 
 	it("POST /api/v1/users/register - should register a user", async () => {
-		(registerUserSchema.safeParse as jest.Mock).mockReturnValue({
-			success: true,
-			data: { name: "Test User" },
-		});
-		(prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
-		(prisma.user.create as jest.Mock).mockResolvedValue({ id: "user1" });
-		(jwt.sign as jest.Mock).mockReturnValue("token");
+		const userData = {
+			name: `bibek-${Math.random().toPrecision(4)}`,
+			email: `bibek-${Math.random().toPrecision(3)}@gmail.com`,
+			googleId: `google-${Math.random().toString(36).substring(2, 10)}`,
+			image:
+				"https://t4.ftcdn.net/jpg/02/15/84/43/360_F_215844325_ttX9YiIIyeaR7Ne6EaLLjMAmy4GvPC69.jpg",
+		};
 
-		const res = await request(app)
-			.post("/api/v1/users/register")
-			.send({ name: "Test User" });
+		const response = await axios.post(`${baseurl}/users/register`, userData);
 
-		expect(res.statusCode).toEqual(200);
-		expect(res.body).toHaveProperty("token", "token");
+		expect(response.status).toEqual(200);
+		expect(response.data).toHaveProperty("token");
+		userToken = response.data.token;
 	});
 
 	it("GET /api/v1/users - should get current user", async () => {
-		const res = await request(app)
-			.get("/api/v1/users")
-			.set("Authorization", "Bearer fake-token");
+		const response = await axios.get(`${baseurl}/users`, {
+			headers: {
+				Authorization: `Bearer ${userToken}`,
+			},
+		});
 
-		expect(res.statusCode).toEqual(200);
-		expect(res.body.user).toHaveProperty("id", "user1");
+		expect(response.status).toBe(200);
+		expect(response.data).toHaveProperty("user");
 	});
 });

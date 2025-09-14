@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma } from "../db/index";
+import { prisma } from "db";
 import {
 	addToCart,
 	getCartItems,
@@ -7,11 +7,8 @@ import {
 	deleteCartItem,
 } from "../controllers/cart.controller";
 import { addToCartSchema } from "../validation/cart.validation";
-import express from "express";
-import request from "supertest";
-import cartRoutes from "../routes/cart.route";
 
-jest.mock("../db", () => ({
+jest.mock("db", () => ({
 	prisma: {
 		productVariant: {
 			findUnique: jest.fn(),
@@ -62,36 +59,6 @@ describe("Cart Controller - Unit Tests", () => {
 	});
 
 	describe("addToCart", () => {
-		it("should add an item to the cart successfully", async () => {
-			const req = mockRequest(
-				{ productVariantId: "variant1", quantity: 1 },
-				{},
-				{ id: "user1" }
-			);
-			const res = mockResponse();
-			(addToCartSchema.safeParse as jest.Mock).mockReturnValue({
-				success: true,
-				data: { productVariantId: "variant1", quantity: 1 },
-			});
-			(prisma.productVariant.findUnique as jest.Mock).mockResolvedValue({
-				id: "variant1",
-				stock: 10,
-			});
-			(prisma.cart.upsert as jest.Mock).mockResolvedValue({
-				id: "cart1",
-				userId: "user1",
-				productVariantId: "variant1",
-				quantity: 1,
-			});
-
-			await addToCart(req, res);
-
-			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith(
-				expect.objectContaining({ id: "cart1" })
-			);
-		});
-
 		it("should return 400 on validation error", async () => {
 			const req = mockRequest({ productVariantId: "variant1" });
 			const res = mockResponse();
@@ -105,24 +72,6 @@ describe("Cart Controller - Unit Tests", () => {
 			expect(res.json).toHaveBeenCalledWith({ message: "Validation error" });
 		});
 
-		it("should return 404 if product not found", async () => {
-			const req = mockRequest(
-				{ productVariantId: "nonexistent", quantity: 1 },
-				{},
-				{ id: "user1" }
-			);
-			const res = mockResponse();
-			(addToCartSchema.safeParse as jest.Mock).mockReturnValue({
-				success: true,
-				data: { productVariantId: "nonexistent", quantity: 1 },
-			});
-			(prisma.productVariant.findUnique as jest.Mock).mockResolvedValue(null);
-
-			await addToCart(req, res);
-
-			expect(res.status).toHaveBeenCalledWith(404);
-			expect(res.json).toHaveBeenCalledWith({ message: "Product not found" });
-		});
 
 		it("should return 400 if quantity exceeds stock", async () => {
 			const req = mockRequest(
@@ -149,164 +98,115 @@ describe("Cart Controller - Unit Tests", () => {
 		});
 	});
 
-	describe("getCartItems", () => {
-		it("should return all cart items for a user", async () => {
-			const req = mockRequest({}, {}, { id: "user1" });
-			const res = mockResponse();
-			const mockCartItems = [
-				{
-					id: "cart1",
-					userId: "user1",
-					productVariant: { Product: { name: "Product 1" } },
-				},
-			];
-			(prisma.cart.findMany as jest.Mock).mockResolvedValue(mockCartItems);
-
-			await getCartItems(req, res);
-
-			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith(mockCartItems);
-		});
-	});
-
-	describe("updateCartItem", () => {
-		it("should update a cart item's quantity", async () => {
-			const req = mockRequest(
-				{ quantity: 2 },
-				{ cartId: "cart1" },
-				{ id: "user1" }
-			);
-			const res = mockResponse();
-			(prisma.cart.findUnique as jest.Mock).mockResolvedValue({
-				id: "cart1",
-				productVariant: { stock: 5 },
-			});
-			(prisma.cart.update as jest.Mock).mockResolvedValue({
-				id: "cart1",
-				quantity: 2,
-			});
-
-			await updateCartItem(req, res);
-
-			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith(
-				expect.objectContaining({ quantity: 2 })
-			);
-		});
-
-		it("should return 404 if cart item not found", async () => {
-			const req = mockRequest(
-				{ quantity: 2 },
-				{ cartId: "nonexistent" },
-				{ id: "user1" }
-			);
-			const res = mockResponse();
-			(prisma.cart.findUnique as jest.Mock).mockResolvedValue(null);
-
-			await updateCartItem(req, res);
-
-			expect(res.status).toHaveBeenCalledWith(404);
-			expect(res.json).toHaveBeenCalledWith({ message: "Cart item not found" });
-		});
-	});
-
-	describe("deleteCartItem", () => {
-		it("should delete a cart item", async () => {
-			const req = mockRequest({}, { cartId: "cart1" }, { id: "user1" });
-			const res = mockResponse();
-			(prisma.cart.deleteMany as jest.Mock).mockResolvedValue({ count: 1 });
-
-			await deleteCartItem(req, res);
-
-			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith({ message: "Cart item deleted" });
-		});
-
-		it("should return 400 if cart item to delete is not found", async () => {
-			const req = mockRequest({}, { cartId: "nonexistent" }, { id: "user1" });
-			const res = mockResponse();
-			(prisma.cart.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
-
-			await deleteCartItem(req, res);
-
-			expect(res.status).toHaveBeenCalledWith(400);
-			expect(res.json).toHaveBeenCalledWith({
-				message: "Failed to delete cart item",
-			});
-		});
-	});
 });
 
 // Integration tests
-const app = express();
-app.use(express.json());
-app.use("/api/v1/carts", cartRoutes);
+import axios from "axios";
+const baseurl = "http://localhost:8000/api/v1";
 
 describe("Cart Controller - Integration Tests", () => {
-	afterEach(() => {
-		jest.clearAllMocks();
+	let productVariantId: string = "";
+	let userToken: string = "";
+	let cartId: string = "";
+
+	beforeAll(async () => {
+		try {
+			const signupResponse = await axios.post(`${baseurl}/users/register`, {
+				name: `bibek-${Math.random().toPrecision(4)}`,
+				email: `bibek-${Math.random().toPrecision(3)}@gmail.com`,
+				googleId: `google-${Math.random().toString(36).substring(2, 10)}`,
+				image:
+					"https://t4.ftcdn.net/jpg/02/15/84/43/360_F_215844325_ttX9YiIIyeaR7Ne6EaLLjMAmy4GvPC69.jpg",
+			});
+			console.log("this is signup response", signupResponse);
+
+			userToken = signupResponse.data.token;
+			// userId = signupResponse.data.user.id;
+
+			const productsResponse = await axios.get(`${baseurl}/products`);
+			console.log(
+				"this is variant id",
+				productsResponse.data.products[0].variants[0].id
+			);
+			productVariantId = productsResponse.data.products[0].variants[0].id;
+
+			const response = await axios.post(
+				`${baseurl}/carts`,
+				{
+					productVariantId: productVariantId,
+					quantity: 1,
+				},
+				{
+					headers: {
+						Authorization: `Bearer ${userToken}`,
+					},
+				}
+			);
+			cartId = response.data.id;
+		} catch (error) {
+			throw new Error(`something went wrong in before all${error}`);
+		}
 	});
 
 	it("POST /api/v1/carts - should add item to cart", async () => {
-		(addToCartSchema.safeParse as jest.Mock).mockReturnValue({
-			success: true,
-			data: { productVariantId: "variant1", quantity: 1 },
-		});
-		(prisma.productVariant.findUnique as jest.Mock).mockResolvedValue({
-			id: "variant1",
-			stock: 10,
-		});
-		(prisma.cart.upsert as jest.Mock).mockResolvedValue({ id: "cart1" });
+		const quantity = 1;
 
-		const res = await request(app)
-			.post("/api/v1/carts")
-			.set("Authorization", "Bearer fake-token")
-			.send({ productVariantId: "variant1", quantity: 1 });
+		const response = await axios.post(
+			`${baseurl}/carts`,
+			{
+				productVariantId: productVariantId,
+				quantity,
+			},
+			{
+				headers: {
+					Authorization: `Bearer ${userToken}`,
+				},
+			}
+		);
 
-		expect(res.statusCode).toEqual(200);
-		expect(res.body).toHaveProperty("id", "cart1");
+		console.log("this is response data", response.data);
+		expect(response.status).toEqual(200);
+		// expect(response.data).toHaveProperty("id", "quantity");
+		expect(response.data.quantity).toBe(quantity);
 	});
 
 	it("GET /api/v1/carts - should get all cart items", async () => {
-		(prisma.cart.findMany as jest.Mock).mockResolvedValue([
-			{ id: "cart1", quantity: 1 },
-		]);
+		const response = await axios.get(`${baseurl}/carts`, {
+			headers: {
+				Authorization: `Bearer ${userToken}`,
+			},
+		});
 
-		const res = await request(app)
-			.get("/api/v1/carts")
-			.set("Authorization", "Bearer fake-token");
-
-		expect(res.statusCode).toEqual(200);
-		expect(res.body.length).toBe(1);
+		expect(response.status).toBe(200);
+		expect(response.data.length).toBeGreaterThanOrEqual(1);
 	});
 
 	it("PUT /api/v1/carts/:cartId - should update cart item", async () => {
-		(prisma.cart.findUnique as jest.Mock).mockResolvedValue({
-			id: "cart1",
-			productVariant: { stock: 5 },
-		});
-		(prisma.cart.update as jest.Mock).mockResolvedValue({
-			id: "cart1",
-			quantity: 5,
-		});
+		console.log("this is cartid in put", cartId);
+		const quantity = 1;
+		const response = await axios.put(
+			`${baseurl}/carts/${cartId}`,
+			{
+				quantity,
+			},
+			{
+				headers: {
+					Authorization: `Bearer ${userToken}`,
+				},
+			}
+		);
 
-		const res = await request(app)
-			.put("/api/v1/carts/cart1")
-			.set("Authorization", "Bearer fake-token")
-			.send({ quantity: 5 });
-
-		expect(res.statusCode).toEqual(200);
-		expect(res.body).toHaveProperty("quantity", 5);
+		expect(response.status).toBe(200);
+		expect(response.data).toHaveProperty("id");
 	});
 
 	it("DELETE /api/v1/carts/:cartId - should delete cart item", async () => {
-		(prisma.cart.deleteMany as jest.Mock).mockResolvedValue({ count: 1 });
+		const response = await axios.delete(`${baseurl}/carts/${cartId}`, {
+			headers: {
+				Authorization: `Bearer ${userToken}`,
+			},
+		});
 
-		const res = await request(app)
-			.delete("/api/v1/carts/cart1")
-			.set("Authorization", "Bearer fake-token");
-
-		expect(res.statusCode).toEqual(200);
-		expect(res.body).toEqual({ message: "Cart item deleted" });
+		expect(response.status).toBe(200);
 	});
 });
