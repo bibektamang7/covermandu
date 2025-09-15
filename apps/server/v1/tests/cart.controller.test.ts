@@ -209,4 +209,45 @@ describe("Cart Controller - Integration Tests", () => {
 
 		expect(response.status).toBe(200);
 	});
+
+	it("POST /api/v1/carts - should return 401 when adding to cart without authentication", async () => {
+		try {
+			await axios.post(`${baseurl}/carts`, {
+				productVariantId: productVariantId,
+				quantity: 1,
+			});
+		} catch (error: any) {
+			expect(error.response.status).toBe(401);
+		}
+	});
+
+	it("PUT /api/v1/carts/:cartId - should return 404 for non-existent cart item", async () => {
+		try {
+			await axios.put(
+				`${baseurl}/carts/nonexistentid`,
+				{
+					quantity: 1,
+				},
+				{
+					headers: {
+						Authorization: `Bearer ${userToken}`,
+					},
+				}
+			);
+		} catch (error: any) {
+			expect(error.response.status).toBe(404);
+		}
+	});
+
+	it("DELETE /api/v1/carts/:cartId - should return 404 for non-existent cart item", async () => {
+		try {
+			await axios.delete(`${baseurl}/carts/nonexistentid`, {
+				headers: {
+					Authorization: `Bearer ${userToken}`,
+				},
+			});
+		} catch (error: any) {
+			expect(error.response.status).toBe(404);
+		}
+	});
 });

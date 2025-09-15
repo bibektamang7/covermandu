@@ -73,4 +73,40 @@ describe("Wishlist Controller - Integration Tests", () => {
 
 		expect(response.status).toBe(200);
 	});
+
+	it("POST /api/v1/wishlists - should return 401 when adding to wishlist without authentication", async () => {
+		try {
+			await axios.post(`${baseurl}/wishlists`, { productId });
+		} catch (error: any) {
+			expect(error.response.status).toBe(401);
+		}
+	});
+
+	it("POST /api/v1/wishlists - should return 400 when adding a product that does not exist", async () => {
+		try {
+			await axios.post(
+				`${baseurl}/wishlists`,
+				{ productId: "nonexistentid" },
+				{
+					headers: {
+						Authorization: `Bearer ${userToken}`,
+					},
+				}
+			);
+		} catch (error: any) {
+			expect(error.response.status).toBe(400);
+		}
+	});
+
+	it("DELETE /api/v1/wishlists/:id - should return 404 for non-existent wishlist item", async () => {
+		try {
+			await axios.delete(`${baseurl}/wishlists/nonexistentid`, {
+				headers: {
+					Authorization: `Bearer ${userToken}`,
+				},
+			});
+		} catch (error: any) {
+			expect(error.response.status).toBe(404);
+		}
+	});
 });

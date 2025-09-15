@@ -1,6 +1,15 @@
 import express from "express";
+import cors from "cors";
 
 const app = express();
+
+app.use(
+	cors({
+		origin: ["http://localhost:3000"],
+		methods: ["POST", "GET", "PUT", "DELETE", "PATCH"],
+		credentials: true,
+	})
+);
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "15kb" }));

@@ -244,8 +244,6 @@ describe("Product Controller - Integration Tests", () => {
 		}
 	});
 
-
-
 	it("GET /api/v1/products - should get all products", async () => {
 		const response = await axios.get(`${baseurl}/products`);
 
@@ -253,111 +251,46 @@ describe("Product Controller - Integration Tests", () => {
 		expect(response.data.products.length).toBeGreaterThanOrEqual(1);
 	});
 
-	// it("GET /api/v1/products/:productId - should get a product by id", async () => {
-	// 	// const productsResponse = await axios.get(`${baseurl}/products`);
-	// 	// const productId = productsResponse.data.products[0].id;
-	// 	const response = await axios.get(`${baseurl}/products/${productId}`);
+	it("GET /api/v1/products/:productId - should return 404 for non-existent product", async () => {
+		try {
+			await axios.get(`${baseurl}/products/nonexistentid`);
+		} catch (error: any) {
+			expect(error.response.status).toBe(404);
+		}
+	});
 
-	// 	expect(response.status).toBe(200);
-	// 	expect(response.data.product).toHaveProperty("id", productId);
-	// });
+	it("POST /api/v1/products - should return 401 for creating a product without authentication", async () => {
+		const newProduct = {
+			name: "Test Product",
+			description: "Test Description",
+			price: 100,
+			variants: [],
+		};
 
-	// it("POST /api/v1/products - should create a new product (admin only)", async () => {
-	// 	const newProduct = {
-	// 		name: "Integration Test Product",
-	// 		description: "A product created during integration tests.",
-	// 		price: 123.45,
-	// 		variants: [
-	// 			{
-	// 				color: "Test Color",
-	// 				stock: 100,
-	// 				image:
-	// 					"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzzSzOGxpVBRgl29As6-s7eqaCCEqK5-FQBQ&s",
-	// 			},
-	// 		],
-	// 	};
+		try {
+			await axios.post(`${baseurl}/products`, newProduct);
+		} catch (error: any) {
+			expect(error.response.status).toBe(401);
+		}
+	});
 
-	// 	try {
-	// 		const response = await axios.post(`${baseurl}/products`, newProduct, {
-	// 			headers: {
-	// 				Authorization: `Bearer ${adminToken}`,
-	// 			},
-	// 		});
+	it("PUT /api/v1/products/:productId - should return 401 for updating a product without authentication", async () => {
+		const updatedData = {
+			name: "Updated Test Product",
+		};
 
-	// 		expect(response.status).toBe(200); // Or 201 if you prefer
-	// 		expect(response.data.message).toBe("Product created successfully");
-	// 	} catch (error: any) {
-	// 		// Fail test if admin token is not valid
-	// 		if (error.response && error.response.status === 403) {
-	// 			throw new Error(
-	// 				"Admin credentials might be missing or invalid in beforeAll."
-	// 			);
-	// 		}
-	// 		throw error;
-	// 	}
-	// });
+		try {
+			await axios.put(`${baseurl}/products/${productId}`, updatedData);
+		} catch (error: any) {
+			expect(error.response.status).toBe(401);
+		}
+	});
 
-	// it("PUT /api/v1/products/:productId - should update a product (admin only)", async () => {
-	// 	const updatedData = {
-	// 		name: "Updated Integration Test Product",
-	// 	};
-
-	// 	try {
-	// 		const response = await axios.put(
-	// 			`${baseurl}/products/${productId}`,
-	// 			updatedData,
-	// 			{
-	// 				headers: {
-	// 					Authorization: `Bearer ${adminToken}`,
-	// 				},
-	// 			}
-	// 		);
-
-	// 		expect(response.status).toBe(200);
-	// 		expect(response.data.message).toBe("Product updated successfully");
-
-	// 		// Verify the update
-	// 		const verifyResponse = await axios.get(
-	// 			`${baseurl}/products/${productId}`
-	// 		);
-	// 		expect(verifyResponse.data.product.name).toBe(
-	// 			"Updated Integration Test Product"
-	// 		);
-	// 	} catch (error: any) {
-	// 		if (error.response && error.response.status === 403) {
-	// 			throw new Error(
-	// 				"Admin credentials might be missing or invalid in beforeAll."
-	// 			);
-	// 		}
-	// 		throw error;
-	// 	}
-	// });
-
-	// it("DELETE /api/v1/products/:productId - should delete a product (admin only)", async () => {
-	// 	// This test will delete the product fetched in `beforeAll`.
-	// 	// For more robust tests, consider creating a new product here and deleting it.
-	// 	// However, the current create endpoint doesn't return the new product's ID.
-	// 	try {
-	// 		const response = await axios.delete(`${baseurl}/products/${productId}`, {
-	// 			headers: {
-	// 				Authorization: `Bearer ${adminToken}`,
-	// 			},
-	// 		});
-
-	// 		expect(response.status).toBe(200);
-	// 		expect(response.data.message).toBe("Product deleted");
-
-	// 		// Verify deletion by expecting a 404
-	// 		await expect(
-	// 			axios.get(`${baseurl}/products/${productId}`)
-	// 		).rejects.toThrow("Request failed with status code 404");
-	// 	} catch (error: any) {
-	// 		if (error.response && error.response.status === 403) {
-	// 			throw new Error(
-	// 				"Admin credentials might be missing or invalid in beforeAll."
-	// 			);
-	// 		}
-	// 		throw error;
-	// 	}
-	// });
+	it("DELETE /api/v1/products/:productId - should return 401 for deleting a product without authentication", async () => {
+		try {
+			await axios.delete(`${baseurl}/products/${productId}`);
+		} catch (error: any) {
+			expect(error.response.status).toBe(401);
+		}
+	});
 });

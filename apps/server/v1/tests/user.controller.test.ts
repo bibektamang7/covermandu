@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import {prisma} from "db"
+import { prisma } from "db";
 import {
 	loginUser,
 	registerUser,
@@ -124,7 +124,9 @@ describe("User Controller - Unit Tests", () => {
 			getUser(req, res);
 
 			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith({ user: { id: "user1", name: "Test User" } });
+			expect(res.json).toHaveBeenCalledWith({
+				user: { id: "user1", name: "Test User" },
+			});
 		});
 	});
 });
@@ -161,5 +163,53 @@ describe("User Controller - Integration Tests", () => {
 
 		expect(response.status).toBe(200);
 		expect(response.data).toHaveProperty("user");
+	});
+
+	it("POST /api/v1/users/register - should not register a user with duplicate email", async () => {
+		const userData = {
+			name: `bibek-${Math.random().toPrecision(4)}`,
+			email: `bibek-${Math.random().toPrecision(3)}@gmail.com`,
+			googleId: `google-${Math.random().toString(36).substring(2, 10)}`,
+			image:
+				"https://t4.ftcdn.net/jpg/02/15/84/43/360_F_215844325_ttX9YiIIyeaR7Ne6EaLLjMAmy4GvPC69.jpg",
+		};
+
+		// First registration
+		await axios.post(`${baseurl}/users/register`, userData);
+
+		// Second registration with the same email
+		try {
+			await axios.post(`${baseurl}/users/register`, userData);
+		} catch (error: any) {
+			expect(error.response.status).toBe(400);
+			expect(error.response.data.message).toBe("User already exists");
+		}
+	});
+
+	it("POST /api/v1/users/register - should not register a user with missing fields", async () => {
+		const userData = {
+			name: `bibek-${Math.random().toPrecision(4)}`,
+			googleId: `google-${Math.random().toString(36).substring(2, 10)}`,
+			image:
+				"https://t4.ftcdn.net/jpg/02/15/84/43/360_F_215844325_ttX9YiIIyeaR7Ne6EaLLjMAmy4GvPC69.jpg",
+		};
+
+		try {
+			await axios.post(`${baseurl}/users/register`, userData);
+		} catch (error: any) {
+			expect(error.response.status).toBe(400);
+		}
+	});
+
+	it("GET /api/v1/users - should not get current user with invalid token", async () => {
+		try {
+			await axios.get(`${baseurl}/users`, {
+				headers: {
+					Authorization: `Bearer invalidtoken`,
+				},
+			});
+		} catch (error: any) {
+			expect(error.response.status).toBe(401);
+		}
 	});
 });

@@ -62,4 +62,45 @@ describe("Review Controller - Integration Tests", () => {
 		expect(response.status).toBe(200);
 		expect(response.data.length).toBeGreaterThanOrEqual(1);
 	});
+
+	it("POST /api/v1/reviews - should return 401 for creating a review without authentication", async () => {
+		const reviewData = {
+			stars: 5,
+			message: "Excellent!",
+			productId: productId,
+			reviewerId: userId,
+		};
+
+		try {
+			await axios.post(`${baseurl}/reviews`, reviewData);
+		} catch (error: any) {
+			expect(error.response.status).toBe(401);
+		}
+	});
+
+	it("POST /api/v1/reviews - should return 400 for creating a review with missing fields", async () => {
+		const reviewData = {
+			stars: 5,
+			productId: productId,
+			reviewerId: userId,
+		};
+
+		try {
+			await axios.post(`${baseurl}/reviews`, reviewData, {
+				headers: {
+					Authorization: `Bearer ${userToken}`,
+				},
+			});
+		} catch (error: any) {
+			expect(error.response.status).toBe(400);
+		}
+	});
+
+	it("GET /api/v1/reviews/product/:productId - should return 404 for a non-existent product", async () => {
+		try {
+			await axios.get(`${baseurl}/reviews/product/nonexistentid`);
+		} catch (error: any) {
+			expect(error.response.status).toBe(404);
+		}
+	});
 });
