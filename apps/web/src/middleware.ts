@@ -4,25 +4,25 @@ import { auth } from "@/app/api/auth/[...nextauth]/auth";
 async function middleware(req: NextRequest) {
 	const session = await auth();
 	const path = req.nextUrl.pathname;
-	console.log("this ispath ", path);
+	console.log("thisis pathh", path);
+	// const isPublicPath = path === "/signup" || path === "/login";
 
-	const isPublicPath = path === "/signup" || path === "/login";
-
-	if (isPublicPath && session) {
-		return NextResponse.redirect(new URL("/dashboard", req.url));
-	}
 	const isPrivatePath =
 		path.startsWith("/dashboard") || path.startsWith("/cart");
 
-	if (!isPublicPath && !session && isPrivatePath) {
+	const isAdminPath = path.startsWith("/admin");
+
+	if ((!session && isPrivatePath) || (isAdminPath && !session)) {
 		return NextResponse.redirect(new URL("/login", req.url));
 	}
-
+	if (isAdminPath && session && session.user?.role === "USER") {
+		return NextResponse.redirect(new URL("/dashboard", req.url));
+	}
 	return NextResponse.next();
 }
 
 export const config = {
-	matcher: ["/cart", "/login", "/dashboard", "/"],
+	matcher: ["/cart", "/admin", "/admin/:path", "/dashboard", "/"],
 };
 
 export default middleware;

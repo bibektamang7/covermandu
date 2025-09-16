@@ -1,5 +1,6 @@
 import { Footer } from "@/components/Footer";
 import { Navigation } from "@/components/Navigation";
+import NavigationLayout from "@/components/NavigationLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -42,7 +43,7 @@ const Cart = () => {
 
 	return (
 		<div className="min-h-screen">
-			<Navigation />
+			<NavigationLayout/>
 			<section className="pt-12 px-16">
 				<div className="pt-8 pb-4 border-b border-border px-4">
 					<div className="container mx-auto">

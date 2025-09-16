@@ -47,7 +47,7 @@ const result = NextAuth({
 					console.warn("Google profile missing email");
 					return false;
 				}
-
+				console.log("is here righ", backendURL);
 				try {
 					const loginResponse = await retryApiCall(() =>
 						circuitBreaker.call(() =>
@@ -67,7 +67,6 @@ const result = NextAuth({
 						error.message || error
 					);
 
-					// If it's a client error (user not found, validation error), try to register
 					if (
 						error.response &&
 						(error.response.status === 404 || error.response.status === 400)
@@ -97,11 +96,9 @@ const result = NextAuth({
 								`Registration failed for user: ${profile.email}`,
 								registerError.message || registerError
 							);
-							// If registration fails, we'll deny the sign-in
 							return false;
 						}
 					} else {
-						// For server errors or network issues, we'll deny the sign-in
 						return false;
 					}
 				}
@@ -119,7 +116,7 @@ const result = NextAuth({
 		},
 		async session({ session, token }) {
 			if (session.user) {
-				session.accessToken = token.accessToken as string;
+				session.user.token = token.accessToken as string;
 				session.user.id = token.id as string;
 				session.user.image = token.image as string;
 				session.user.name = token.name as string;

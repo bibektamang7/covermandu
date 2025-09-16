@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, Truck, Star } from "lucide-react";
+import Link from "next/link";
 
 export const Hero = () => {
 	return (
@@ -43,16 +44,20 @@ export const Hero = () => {
 						</div>
 
 						<div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-[slideInFromLeft_0.8s_ease-out_0.8s_both]">
-							<Button className="btn-hero group">
-								Shop Cases Now
-								<ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
-							</Button>
-							<Button
-								variant="outline"
-								className="btn-ghost"
-							>
-								View Collection
-							</Button>
+							<Link href={"/products"}>
+								<Button className="btn-hero group">
+									Shop Cases Now
+									<ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+								</Button>
+							</Link>
+							<Link href={"/login"}>
+								<Button
+									variant="outline"
+									className="btn-ghost"
+								>
+									Get Started
+								</Button>
+							</Link>
 						</div>
 					</div>
 

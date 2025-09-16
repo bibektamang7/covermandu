@@ -12,8 +12,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Heart, ShoppingCart, Star, Filter, Sparkles } from "lucide-react";
+import {
+	Heart,
+	ShoppingCart,
+	Star,
+	Filter,
+	Sparkles,
+	ChevronLeft,
+} from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import NavigationLayout from "@/components/NavigationLayout";
 
 const allProducts = [
 	{
@@ -122,6 +131,7 @@ const sortOptions = [
 const Products = () => {
 	const [selectedFilter, setSelectedFilter] = useState("all");
 	const [selectedSort, setSelectedSort] = useState("newest");
+	const router = useRouter();
 
 	const getColorStyle = (color: string) => {
 		const colorMap: { [key: string]: string } = {
@@ -169,11 +179,18 @@ const Products = () => {
 					return b.id - a.id; // newest first
 			}
 		});
-
 	return (
 		<div className="min-h-screen">
-			<Navigation />
+			<NavigationLayout />
+
 			<main className="pt-20 px-12">
+				<div
+					className="flex items-center hover:text-primary px-6 hover:cursor-pointer"
+					onClick={() => router.back()}
+				>
+					<ChevronLeft />
+					back
+				</div>
 				<section className="py-8 bg-background/80 backdrop-blur-sm z-40 border-b">
 					<div className="container mx-auto px-6">
 						<div className="flex flex-col lg:flex-row gap-6 items-center justify-between">

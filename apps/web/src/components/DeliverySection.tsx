@@ -21,7 +21,7 @@ const features = [
 	{
 		icon: Truck,
 		title: "Free Shipping",
-		description: "Free delivery on orders above ₹1,000",
+		description: "Free delivery on orders above RS 1,000",
 	},
 ];
 
@@ -39,7 +39,6 @@ export const DeliverySection = () => {
 		<section className="py-20 px-16 bg-gradient-to-br from-accent/10 via-background to-primary/5">
 			<div className="container mx-auto px-6">
 				<div className="grid lg:grid-cols-2 gap-12 items-center">
-					{/* Left Content */}
 					<div className="space-y-8">
 						<div className="space-y-4">
 							<h2 className="text-4xl lg:text-5xl font-bold text-balance">

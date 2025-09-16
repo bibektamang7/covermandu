@@ -20,6 +20,7 @@ import {
 	Calendar,
 } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
+import NavigationLayout from "@/components/NavigationLayout";
 
 const Dashboard = () => {
 	const userStats = [
@@ -83,7 +84,7 @@ const Dashboard = () => {
 
 	return (
 		<div className="min-h-screen bg-muted/30">
-			<Navigation />
+			<NavigationLayout />
 			<main className="pt-20 px-16">
 				<div className="container mx-auto px-6 py-8">
 					{/* Header */}
