@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, ShoppingCart, Search, User } from "lucide-react";
 import { SearchDialog } from "@/components/SearchDialog";
 import Link from "next/link";
-import { getSession, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 
 export const Navigation = () => {
 	const session = useSession();

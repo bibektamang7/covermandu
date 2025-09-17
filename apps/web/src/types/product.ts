@@ -1,3 +1,10 @@
+export enum Tag {
+	TRENDING,
+	NEW,
+	MOST_LIKED,
+	POPULAR,
+	PREMIUM,
+}
 export interface Product {
 	id: string;
 	name: string;
@@ -8,7 +15,7 @@ export interface Product {
 	updatedAt: Date;
 	variants: ProductVariant[];
 	reviews: Review[];
-	tag: string;
+	tag: Tag;
 }
 
 export interface Review {

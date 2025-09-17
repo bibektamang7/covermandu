@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
 	Select,
@@ -17,107 +17,32 @@ import {
 	ShoppingCart,
 	Star,
 	Filter,
-	Sparkles,
 	ChevronLeft,
+	ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import NavigationLayout from "@/components/NavigationLayout";
-
-const allProducts = [
-	{
-		id: 1,
-		name: "Crystal Clear Pro",
-		price: 1299,
-		originalPrice: 1599,
-		rating: 4.8,
-		reviews: 124,
-		image: "",
-		colors: ["transparent", "smoke", "blue"],
-		category: "trending",
-		tag: "Best Seller",
-		isNew: false,
-		likes: 89,
-	},
-	{
-		id: 2,
-		name: "Urban Shield",
-		price: 999,
-		originalPrice: 1299,
-		rating: 4.9,
-		reviews: 89,
-		image: "",
-		colors: ["black", "navy", "forest"],
-		category: "new",
-		tag: "New",
-		isNew: true,
-		likes: 156,
-	},
-	{
-		id: 3,
-		name: "Gradient Glow",
-		price: 1499,
-		originalPrice: 1799,
-		rating: 4.7,
-		reviews: 156,
-		image: "",
-		colors: ["sunset", "ocean", "aurora"],
-		category: "trending",
-		tag: "Limited",
-		isNew: false,
-		likes: 203,
-	},
-	{
-		id: 4,
-		name: "Minimalist Matte",
-		price: 899,
-		originalPrice: 1199,
-		rating: 4.6,
-		reviews: 78,
-		image: "",
-		colors: ["white", "sand", "stone"],
-		category: "popular",
-		tag: "Popular",
-		isNew: false,
-		likes: 134,
-	},
-	{
-		id: 5,
-		name: "Premium Leather",
-		price: 1999,
-		originalPrice: 2399,
-		rating: 4.9,
-		reviews: 67,
-		image: "",
-		colors: ["brown", "black", "tan"],
-		category: "premium",
-		tag: "Premium",
-		isNew: false,
-		likes: 178,
-	},
-	{
-		id: 6,
-		name: "Neon Burst",
-		price: 1199,
-		originalPrice: 1499,
-		rating: 4.5,
-		reviews: 92,
-		image: "",
-		colors: ["neon-pink", "neon-green", "neon-yellow"],
-		category: "new",
-		tag: "New",
-		isNew: true,
-		likes: 87,
-	},
-];
+import { useProductsQuery } from "@/hooks/useProductsQuery";
+import { Product, Tag, Review } from "@/types/product";
+import BackButton from "@/components/BackButton";
+import { useCart } from "@/context/cartContext";
+import { toast } from "sonner";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import ReviewForm from "@/components/ReviewForm";
 
 const filterOptions = [
 	{ value: "all", label: "All Products" },
-	{ value: "trending", label: "Trending" },
-	{ value: "new", label: "New Arrivals" },
-	{ value: "popular", label: "Most Popular" },
-	{ value: "most-liked", label: "Most Liked" },
-	{ value: "premium", label: "Premium" },
+	{ value: "TRENDING", label: "Trending" },
+	{ value: "NEW", label: "New Arrivals" },
+	{ value: "POPULAR", label: "Most Popular" },
+	{ value: "MOST_LIKED", label: "Most Liked" },
+	{ value: "PREMIUM", label: "Premium" },
 ];
 
 const sortOptions = [
@@ -125,72 +50,74 @@ const sortOptions = [
 	{ value: "price-low", label: "Price: Low to High" },
 	{ value: "price-high", label: "Price: High to Low" },
 	{ value: "rating", label: "Highest Rated" },
-	{ value: "most-liked", label: "Most Liked" },
 ];
 
+const getAverageRating = (reviews: Review[]) => {
+	if (!reviews || reviews.length === 0) return 0;
+	const total = reviews.reduce((acc, review) => acc + review.starts, 0);
+	return total / reviews.length;
+};
+
 const Products = () => {
-	const [selectedFilter, setSelectedFilter] = useState("all");
+	const [selectedFilter, setSelectedFilter] = useState<string>("all");
 	const [selectedSort, setSelectedSort] = useState("newest");
+	const [currentPage, setCurrentPage] = useState(1);
+	const [openReviewDialog, setOpenReviewDialog] = useState(false);
+	const [selectedProductForReview, setSelectedProductForReview] = useState<Product | null>(null);
+	const productsPerPage = 12;
 	const router = useRouter();
 
-	const getColorStyle = (color: string) => {
-		const colorMap: { [key: string]: string } = {
-			transparent: "rgba(255,255,255,0.3)",
-			smoke: "#6B7280",
-			blue: "#3B82F6",
-			black: "#1F2937",
-			navy: "#1E3A8A",
-			forest: "#166534",
-			sunset: "#F59E0B",
-			ocean: "#0EA5E9",
-			aurora: "#8B5CF6",
-			white: "#F9FAFB",
-			sand: "#F3E8C6",
-			stone: "#A8A29E",
-			brown: "#8B4513",
-			tan: "#D2B48C",
-			"neon-pink": "#FF1493",
-			"neon-green": "#00FF00",
-			"neon-yellow": "#FFFF00",
-		};
-		return colorMap[color] || color;
-	};
+	const { addToCart } = useCart();
 
-	const filteredProducts = allProducts
-		.filter((product) => {
-			// Filter by category
+	const { data, isLoading, refetch } = useProductsQuery();
+
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [selectedFilter, selectedSort]);
+
+	const filteredProducts = data?.products
+		.filter((product: Product) => {
 			if (selectedFilter === "all") return true;
-			if (selectedFilter === "most-liked") {
-				return product.likes > 150;
-			}
-			return product.category === selectedFilter;
+			return Tag[product.tag] === selectedFilter;
 		})
-		.sort((a, b) => {
+		.sort((a: Product, b: Product) => {
 			switch (selectedSort) {
 				case "price-low":
 					return a.price - b.price;
 				case "price-high":
 					return b.price - a.price;
 				case "rating":
-					return b.rating - a.rating;
-				case "most-liked":
-					return b.likes - a.likes;
+					return getAverageRating(b.reviews) - getAverageRating(a.reviews);
+				case "newest":
 				default:
-					return b.id - a.id; // newest first
+					return (
+						new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+					);
 			}
-		});
+		}) || [];
+
+	const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+	const paginatedProducts = filteredProducts.slice(
+		(currentPage - 1) * productsPerPage,
+		currentPage * productsPerPage
+	);
+
+	const handleReviewSubmitted = () => {
+		setOpenReviewDialog(false);
+		// Refetch products to update reviews
+		refetch();
+	};
+
+	if (isLoading) {
+		return <>Loading...</>;
+	}
+
 	return (
 		<div className="min-h-screen">
-			<NavigationLayout />
+			<Navigation />
 
 			<main className="pt-20 px-12">
-				<div
-					className="flex items-center hover:text-primary px-6 hover:cursor-pointer"
-					onClick={() => router.back()}
-				>
-					<ChevronLeft />
-					back
-				</div>
+				<BackButton />
 				<section className="py-8 bg-background/80 backdrop-blur-sm z-40 border-b">
 					<div className="container mx-auto px-6">
 						<div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
@@ -285,115 +212,176 @@ const Products = () => {
 								</Button>
 							</div>
 						) : (
-							<div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-								{filteredProducts.map((product, index) => (
-									<div
-										key={product.id}
-										className="animate-fade-in hover-scale"
-										style={{ animationDelay: `${index * 0.1}s` }}
-									>
-										<Link
-											href={`/product/${product.id}`}
-											className="block"
-										>
-											<Card className="product-card group cursor-pointer overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-background to-secondary/10">
-												{/* Product Image */}
-												<div className="relative overflow-hidden rounded-t-xl">
-													<div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent z-10"></div>
-													<img
-														src={product.image}
-														alt={product.name}
-														className="w-full h-56 object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110"
-													/>
-
-													{/* Floating Tag */}
-													<div className="absolute top-4 left-4 z-20">
-														<Badge className="bg-white/90 text-primary border-0 shadow-lg backdrop-blur-sm font-semibold">
-															{product.tag}
-														</Badge>
-													</div>
-
-													{/* Quick Actions */}
-													<div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-100 scale-95">
-														<Button
-															size="sm"
-															variant="secondary"
-															className="w-10 h-10 p-0 rounded-full bg-white/90 backdrop-blur-sm border-0 shadow-lg hover:bg-white"
-														>
-															<Heart className="w-4 h-4 text-primary" />
-														</Button>
-													</div>
-
-													{/* Color Palette */}
-													<div className="absolute bottom-4 left-4 z-20 flex gap-1.5">
-														{product.colors.map((color, i) => (
-															<div
-																key={i}
-																className="w-5 h-5 rounded-full border-2 border-white/80 shadow-lg backdrop-blur-sm transition-transform hover:scale-110"
-																style={{
-																	backgroundColor: getColorStyle(color),
-																}}
+							<>
+								<div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+									{paginatedProducts.map((product: Product, index: number) => {
+										const averageRating = getAverageRating(product.reviews);
+										const originalPrice =
+											product.discount > 0
+												? Math.round(
+														product.price / (1 - product.discount / 100)
+													)
+												: product.price;
+										return (
+											<div
+												key={product.id}
+												className="animate-fade-in hover-scale"
+												style={{ animationDelay: `${index * 0.1}s` }}
+											>
+												<Link
+													href={`/product/${product.id}`}
+													className="block"
+												>
+													<Card className="product-card group cursor-pointer overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-background to-secondary/10">
+														{/* Product Image */}
+														<div className="relative overflow-hidden rounded-t-xl">
+															<div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent z-10"></div>
+															<img
+																src={
+																	product.variants[0]?.image ||
+																	"/placeholder.svg"
+																}
+																alt={product.name}
+																className="w-full h-56 object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110"
 															/>
-														))}
-													</div>
 
-													{/* Likes Counter */}
-													<div className="absolute bottom-4 right-4 z-20 bg-white/90 backdrop-blur-sm text-primary text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg font-medium">
-														<Heart className="w-3 h-3 fill-red-500 text-red-500" />
-														{product.likes}
-													</div>
-												</div>
-
-												{/* Product Info */}
-												<div className="p-6 space-y-4">
-													<div className="space-y-2">
-														<h3 className="font-bold text-xl group-hover:text-primary transition-colors duration-300">
-															{product.name}
-														</h3>
-
-														{/* Rating */}
-														<div className="flex items-center gap-3">
-															<div className="flex items-center gap-1">
-																<Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-																<span className="text-sm font-semibold">
-																	{product.rating}
-																</span>
+															{/* Floating Tag */}
+															<div className="absolute top-4 left-4 z-20">
+																<Badge className="bg-white/90 text-primary border-0 shadow-lg backdrop-blur-sm font-semibold">
+																	{product.tag}
+																</Badge>
 															</div>
-															<span className="text-sm text-muted-foreground">
-																{product.reviews} reviews
-															</span>
+
+															{/* Quick Actions */}
+															<div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-100 scale-95">
+																<Button
+																	size="sm"
+																	variant="secondary"
+																	className="w-10 h-10 p-0 rounded-full bg-white/90 backdrop-blur-sm border-0 shadow-lg hover:bg-white"
+																>
+																	<Heart className="w-4 h-4 text-primary" />
+																</Button>
+															</div>
 														</div>
-													</div>
 
-													{/* Price */}
-													<div className="flex items-center gap-3">
-														<span className="text-2xl font-bold text-primary">
-															₹{product.price}
-														</span>
-														<span className="text-sm text-muted-foreground line-through bg-muted/50 px-2 py-1 rounded-md">
-															₹{product.originalPrice}
-														</span>
-													</div>
+														<div className="p-6 space-y-4">
+															<div className="space-y-2">
+																<h3 className="font-bold text-xl group-hover:text-primary transition-colors duration-300">
+																	{product.name}
+																</h3>
 
-													{/* Add to Cart */}
-													<Button
-														className="w-full group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-primary/25 transition-all duration-300"
-														size="lg"
-														onClick={(e) => {
-															e.preventDefault();
-															e.stopPropagation();
-															// Add to cart logic here
-														}}
-													>
-														<ShoppingCart className="w-4 h-4 mr-2 transition-transform group-hover:scale-110" />
-														Add to Cart
-													</Button>
-												</div>
-											</Card>
-										</Link>
+																{/* Rating */}
+																<div className="flex items-center gap-3">
+																	<div className="flex items-center gap-1">
+																		<Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+																		<span className="text-sm font-semibold">
+																			{averageRating.toFixed(1)}
+																		</span>
+																	</div>
+																	<span className="text-sm text-muted-foreground">
+																		{product.reviews.length} reviews
+																	</span>
+																</div>
+															</div>
+
+															{/* Price */}
+															<div className="flex items-center gap-3">
+																<span className="text-2xl font-bold text-primary">
+																	RS. {product.price}
+																</span>
+																{product.discount > 0 && (
+																	<span className="text-sm text-muted-foreground line-through bg-muted/50 px-2 py-1 rounded-md">
+																		RS. {originalPrice}
+																	</span>
+																)}
+															</div>
+
+															<div className="flex gap-2">
+																<Button
+																	className="flex-1 group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-primary/25 transition-all duration-300"
+																	size="lg"
+																	onClick={(e) => {
+																		e.preventDefault();
+																		e.stopPropagation();
+																		addToCart(product, product.variants[0]!, 1);
+																		toast("Added to cart", {
+																			description: `${product.name} has been added to your cart.`,
+																		});
+																	}}
+																>
+																	<ShoppingCart className="w-4 h-4 mr-2 transition-transform group-hover:scale-110" />
+																	Add to Cart
+																</Button>
+																<Dialog open={openReviewDialog && selectedProductForReview?.id === product.id} onOpenChange={(open) => {
+																	setOpenReviewDialog(open);
+																	if (open) {
+																		setSelectedProductForReview(product);
+																	} else {
+																		setSelectedProductForReview(null);
+																	}
+																}}>
+																	<DialogTrigger asChild>
+																		<Button
+																			variant="outline"
+																			size="lg"
+																			onClick={(e) => {
+																				e.preventDefault();
+																				e.stopPropagation();
+																				setSelectedProductForReview(product);
+																				setOpenReviewDialog(true);
+																			}}
+																		>
+																			Review
+																		</Button>
+																	</DialogTrigger>
+																	<DialogContent className="sm:max-w-[425px]">
+																		<DialogHeader>
+																			<DialogTitle>Write a Review</DialogTitle>
+																		</DialogHeader>
+																		{selectedProductForReview && (
+																			<ReviewForm
+																				productId={selectedProductForReview.id}
+																				onReviewSubmitted={handleReviewSubmitted}
+																			/>
+																		)}
+																	</DialogContent>
+																</Dialog>
+															</div>
+														</div>
+													</Card>
+												</Link>
+											</div>
+										);
+									})}
+								</div>
+								{totalPages > 1 && (
+									<div className="flex justify-center items-center gap-4 mt-12">
+										<Button
+											onClick={() =>
+												setCurrentPage((prev) => Math.max(prev - 1, 1))
+											}
+											disabled={currentPage === 1}
+											variant="outline"
+										>
+											<ChevronLeft className="w-4 h-4 mr-2" />
+											Previous
+										</Button>
+										<span className="text-sm font-medium text-muted-foreground">
+											Page {currentPage} of {totalPages}
+										</span>
+										<Button
+											onClick={() =>
+												setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+											}
+											disabled={currentPage === totalPages}
+											variant="outline"
+										>
+											Next
+											<ChevronRight className="w-4 h-4 ml-2" />
+										</Button>
 									</div>
-								))}
-							</div>
+								)}
+							</>
 						)}
 					</div>
 				</section>

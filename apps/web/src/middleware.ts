@@ -4,7 +4,6 @@ import { auth } from "@/app/api/auth/[...nextauth]/auth";
 async function middleware(req: NextRequest) {
 	const session = await auth();
 	const path = req.nextUrl.pathname;
-	console.log("thisis pathh", path);
 	// const isPublicPath = path === "/signup" || path === "/login";
 
 	const isPrivatePath =

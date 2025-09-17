@@ -27,6 +27,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Upload, X, Plus, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 interface AddProductFormProps {
 	open: boolean;
@@ -39,6 +40,7 @@ interface ProductVariant {
 	image: File | null;
 }
 const AddProductForm = ({ open, onOpenChange }: AddProductFormProps) => {
+	const { data } = useSession();
 	const [formData, setFormData] = useState({
 		name: "",
 		description: "",
@@ -55,7 +57,12 @@ const AddProductForm = ({ open, onOpenChange }: AddProductFormProps) => {
 		mutationFn: async (payload: any) => {
 			const res = await axios.post(
 				`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/products`,
-				payload
+				payload,
+				{
+					headers: {
+						Authorization: `Bearer ${data?.user?.token}`,
+					},
+				}
 			);
 			return res.data;
 		},
@@ -112,7 +119,12 @@ const AddProductForm = ({ open, onOpenChange }: AddProductFormProps) => {
 
 	const uploadToImageKit = async (file: File) => {
 		const { data: auth } = await axios.get(
-			`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/users/upload`
+			`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/users/upload`,
+			{
+				headers: {
+					Authorization: `Bearer ${data?.user?.token}`,
+				},
+			}
 		);
 
 		const formData = new FormData();

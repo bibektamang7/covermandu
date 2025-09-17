@@ -1,9 +1,6 @@
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
-
-const queryClient = new QueryClient();
 
 const layout = ({ children }: { children: React.ReactNode }) => {
 	return (
@@ -17,9 +14,7 @@ const layout = ({ children }: { children: React.ReactNode }) => {
 							<h1 className="text-xl font-semibold">Admin Dashboard</h1>
 						</div>
 					</header>
-					<QueryClientProvider client={queryClient}>
-						<main className="flex-1 p-6 bg-muted/30">{children}</main>
-					</QueryClientProvider>
+					<main className="flex-1 p-6 bg-muted/30">{children}</main>
 				</div>
 			</div>
 		</SidebarProvider>

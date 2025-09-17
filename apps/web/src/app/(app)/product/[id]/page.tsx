@@ -15,135 +15,98 @@ import {
 	Truck,
 	Shield,
 	RotateCcw,
-	ThumbsUp,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import NavigationLayout from "@/components/NavigationLayout";
+import { useGetProduct } from "@/hooks/useGetProduct";
+import { Product, Review } from "@/types/product";
+import { useParams } from "next/navigation";
+import Image from "next/image";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import BackButton from "@/components/BackButton";
+import { useCart } from "@/context/cartContext";
 
-// Mock product data - in a real app this would come from an API
-const productData = {
-	"1": {
-		id: "1",
-		name: "Classic Clear Case",
-		price: 29.99,
-		originalPrice: 39.99,
-		rating: 4.5,
-		reviewCount: 1247,
-		images: [
-			"/placeholder.svg",
-			"/placeholder.svg",
-			"/placeholder.svg",
-			"/placeholder.svg",
-		],
-		colors: ["Clear", "Black", "Blue", "Pink"],
-		features: [
-			"Drop protection up to 10ft",
-			"Wireless charging compatible",
-			"Anti-yellowing technology",
-			"Precise cutouts for all ports",
-		],
-		description:
-			"Our Classic Clear Case offers the perfect balance of protection and style. Made from premium materials with advanced anti-yellowing technology, this case keeps your phone safe while showcasing its original design.",
-		specifications: {
-			Material: "TPU + PC",
-			Weight: "45g",
-			Thickness: "1.2mm",
-			Compatibility: "iPhone 15 Pro Max",
-		},
-		reviews: [
-			{
-				id: 1,
-				name: "Sarah Johnson",
-				avatar: "/placeholder.svg",
-				rating: 5,
-				date: "2024-01-15",
-				title: "Perfect protection and style!",
-				comment:
-					"This case has been amazing! Dropped my phone multiple times and it's still in perfect condition. The clear design shows off my phone beautifully.",
-				helpful: 24,
-				verified: true,
-			},
-			{
-				id: 2,
-				name: "Mike Chen",
-				avatar: "/placeholder.svg",
-				rating: 4,
-				date: "2024-01-10",
-				title: "Great quality, minor yellowing after 6 months",
-				comment:
-					"Overall excellent case. Good protection and fits perfectly. Started to yellow slightly after 6 months of use, but still looks decent.",
-				helpful: 18,
-				verified: true,
-			},
-			{
-				id: 3,
-				name: "Emma Rodriguez",
-				avatar: "/placeholder.svg",
-				rating: 5,
-				date: "2024-01-08",
-				title: "Wireless charging works perfectly",
-				comment:
-					"No issues with wireless charging at all. Case feels premium and the buttons are very responsive. Highly recommend!",
-				helpful: 31,
-				verified: true,
-			},
-			{
-				id: 4,
-				name: "David Wilson",
-				avatar: "/placeholder.svg",
-				rating: 4,
-				date: "2024-01-05",
-				title: "Good value for money",
-				comment:
-					"Solid case for the price. Protection seems good and I like the minimalist design. Easy to clean too.",
-				helpful: 12,
-				verified: false,
-			},
-			{
-				id: 5,
-				name: "Lisa Park",
-				avatar: "/placeholder.svg",
-				rating: 5,
-				date: "2024-01-02",
-				title: "Exceeded expectations!",
-				comment:
-					"This case is exactly what I was looking for. Clear, protective, and doesn't add too much bulk. The corners feel very secure.",
-				helpful: 27,
-				verified: true,
-			},
-		],
-		reviewStats: {
-			totalReviews: 1247,
-			averageRating: 4.5,
-			ratingBreakdown: {
-				5: 847,
-				4: 278,
-				3: 89,
-				2: 21,
-				1: 12,
-			},
-		},
-	},
+const getAverageRating = (reviews: Review[]) => {
+	if (!reviews || reviews.length === 0) return 0;
+	const total = reviews.reduce((acc, review) => acc + review.starts, 0);
+	return total / reviews.length;
 };
 
-export default function ProductDetail({ params }: { params: { id: string } }) {
-	const { id } = params;
-	const [selectedImage, setSelectedImage] = useState(0);
-	const [selectedColor, setSelectedColor] = useState(0);
+export default function ProductDetail() {
+	const params = useParams<{ id: string }>();
+	if (!params) {
+		return <>Product id required</>;
+	}
+	const { data, isError, isLoading } = useGetProduct(params.id);
+
+	const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
 	const [quantity, setQuantity] = useState(1);
 
 	const router = useRouter();
-	const product = productData[id as keyof typeof productData];
+	// Review form state
+	const [reviewRating, setReviewRating] = useState(0);
+	const [reviewTitle, setReviewTitle] = useState("");
+	const [reviewComment, setReviewComment] = useState("");
+	const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
-	if (!product) {
+	const { addToCart } = useCart();
+
+	const handleSubmitReview = async (e: React.FormEvent) => {
+		e.preventDefault();
+
+		if (reviewRating === 0) {
+			toast("Rating required", {
+				description: "Please select a rating for your review.",
+			});
+			return;
+		}
+
+		if (!reviewTitle.trim() || !reviewComment.trim()) {
+			toast("Missing information", {
+				description: "Please fill in both title and comment for your review.",
+			});
+			return;
+		}
+
+		setIsSubmittingReview(true);
+
+		// Simulate API call
+		setTimeout(() => {
+			toast("Review submitted", {
+				description:
+					"Thank you for your feedback. Your review will appear after approval.",
+			});
+
+			// Reset form
+			setReviewRating(0);
+			setReviewTitle("");
+			setReviewComment("");
+			setIsSubmittingReview(false);
+		}, 1000);
+	};
+
+	if (isLoading) {
 		return (
 			<div className="min-h-screen bg-background">
-				<NavigationLayout />
-				<main className="container mx-auto px-4 py-16 text-center">
+				<h1 className="text-2xl font-bold text-foreground">Loading...</h1>
+			</div>
+		);
+	}
+
+	if (isError || !data || !data.product) {
+		return (
+			<div className="min-h-screen bg-background">
+				<Navigation />
+				<main className="container mx-auto flex-grow flex flex-col justify-center items-center">
 					<h1 className="text-2xl font-bold text-foreground mb-4">
 						Product Not Found
 					</h1>
-					<Button onClick={() => router.back()}>
+					<Button
+						onClick={() => router.back()}
+						variant="outline"
+					>
 						<ArrowLeft className="w-4 h-4 mr-2" />
 						Go Back
 					</Button>
@@ -153,44 +116,59 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 		);
 	}
 
+	const product = data.product as Product;
+	const selectedVariant = product.variants[selectedVariantIndex];
+
+	const averageRating = getAverageRating(product.reviews);
+	const reviewCount = product.reviews.length;
+	const originalPrice =
+		product.discount > 0
+			? product.price / (1 - product.discount / 100)
+			: product.price;
+
+	const reviewStats = {
+		totalReviews: reviewCount,
+		averageRating: averageRating,
+		ratingBreakdown: {
+			5: product.reviews.filter((r) => r.starts === 5).length,
+			4: product.reviews.filter((r) => r.starts === 4).length,
+			3: product.reviews.filter((r) => r.starts === 3).length,
+			2: product.reviews.filter((r) => r.starts === 2).length,
+			1: product.reviews.filter((r) => r.starts === 1).length,
+		},
+	};
+
 	return (
 		<div className="min-h-screen bg-background">
-			<NavigationLayout />
+			<Navigation />
 
-			<main className="container mx-auto px-4 py-8">
-				<Button
-					variant="ghost"
-					onClick={() => router.back()}
-					className="mb-6"
-				>
-					<ArrowLeft className="w-4 h-4 mr-2" />
-					Back
-				</Button>
-
+			<main className="container mx-auto px-20 py-16">
+				<BackButton />
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-					{/* Product Images */}
-					<div className="space-y-4">
-						<div className="aspect-square bg-muted rounded-lg overflow-hidden">
-							<img
-								src={product.images[selectedImage]}
+					<div className="space-y-4 h-fit">
+						<div className="aspect-square w-full h-96 bg-muted rounded-lg overflow-hidden">
+							<Image
+								width={40}
+								height={40}
+								src={selectedVariant?.image || "/placeholder.svg"}
 								alt={product.name}
-								className="w-full h-full object-cover"
+								className="w-full h-full object-fill"
 							/>
 						</div>
 						<div className="grid grid-cols-4 gap-2">
-							{product.images.map((image, index) => (
+							{product.variants.map((variant, index) => (
 								<button
-									key={index}
-									onClick={() => setSelectedImage(index)}
+									key={variant.id}
+									onClick={() => setSelectedVariantIndex(index)}
 									className={`aspect-square bg-muted rounded-lg overflow-hidden border-2 transition-colors ${
-										selectedImage === index
+										selectedVariantIndex === index
 											? "border-primary"
 											: "border-transparent"
 									}`}
 								>
 									<img
-										src={image}
-										alt={`${product.name} view ${index + 1}`}
+										src={variant.image}
+										alt={`${product.name} ${variant.color}`}
 										className="w-full h-full object-cover"
 									/>
 								</button>
@@ -198,7 +176,6 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 						</div>
 					</div>
 
-					{/* Product Info */}
 					<div className="space-y-6">
 						<div>
 							<h1 className="text-3xl font-bold text-foreground mb-2">
@@ -209,22 +186,30 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 									{[...Array(5)].map((_, i) => (
 										<Star
 											key={i}
-											className={`w-4 h-4 ${i < Math.floor(product.rating) ? "fill-primary text-primary" : "text-muted-foreground"}`}
+											className={`w-4 h-4 ${
+												i < Math.floor(averageRating)
+													? "fill-primary text-primary"
+													: "text-muted-foreground"
+											}`}
 										/>
 									))}
 								</div>
 								<span className="text-sm text-muted-foreground">
-									{product.rating} ({product.reviewCount} reviews)
+									{averageRating.toFixed(1)} ({reviewCount} reviews)
 								</span>
 							</div>
 							<div className="flex items-center gap-3">
 								<span className="text-3xl font-bold text-foreground">
-									${product.price}
+									RS. {product.price - (product.discount / 100) * product.price}
 								</span>
-								<span className="text-lg text-muted-foreground line-through">
-									${product.originalPrice}
-								</span>
-								<Badge variant="destructive">25% OFF</Badge>
+								{product.discount > 0 && (
+									<>
+										<span className="text-lg text-muted-foreground line-through">
+											RS. {product.price}
+										</span>
+										<Badge variant="destructive">{product.discount}% OFF</Badge>
+									</>
+								)}
 							</div>
 						</div>
 
@@ -233,17 +218,17 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 						<div>
 							<h3 className="font-semibold text-foreground mb-3">Color</h3>
 							<div className="flex gap-2">
-								{product.colors.map((color, index) => (
+								{product.variants.map((variant, index) => (
 									<button
-										key={color}
-										onClick={() => setSelectedColor(index)}
+										key={variant.id}
+										onClick={() => setSelectedVariantIndex(index)}
 										className={`px-4 py-2 rounded-md border transition-colors ${
-											selectedColor === index
+											selectedVariantIndex === index
 												? "border-primary bg-primary/10 text-primary"
 												: "border-border bg-background text-foreground hover:bg-muted"
 										}`}
 									>
-										{color}
+										{variant.color}
 									</button>
 								))}
 							</div>
@@ -273,7 +258,15 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 						</div>
 
 						<div className="flex gap-3">
-							<Button className="flex-1">
+							<Button
+								className="flex-1"
+								onClick={() => {
+									addToCart(product, selectedVariant!, quantity);
+									toast("Added to cart", {
+										description: `${product.name} (${selectedVariant?.color}) has been added to your cart.`,
+									});
+								}}
+							>
 								<ShoppingCart className="w-4 h-4 mr-2" />
 								Add to Cart
 							</Button>
@@ -302,203 +295,251 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 					</div>
 				</div>
 
-				{/* Product Details */}
-				<div className="mt-16 space-y-8">
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-						<Card>
-							<CardContent className="p-6">
-								<h2 className="text-xl font-bold text-foreground mb-4">
-									Description
-								</h2>
-								<p className="text-muted-foreground leading-relaxed">
-									{product.description}
-								</p>
-								<h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
-									Key Features
-								</h3>
-								<ul className="space-y-2">
-									{product.features.map((feature, index) => (
-										<li
-											key={index}
-											className="flex items-start gap-2 text-muted-foreground"
-										>
-											<span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 shrink-0" />
-											{feature}
-										</li>
-									))}
-								</ul>
-							</CardContent>
-						</Card>
+				<div className="lg:mt-8 space-y-8">
+					<Card>
+						<CardContent className="p-6">
+							<h2 className="text-xl font-bold text-foreground mb-4">
+								Description
+							</h2>
+							<p className="text-muted-foreground leading-relaxed">
+								{product.description}
+							</p>
+						</CardContent>
+					</Card>
 
-						<Card>
-							<CardContent className="p-6">
-								<h2 className="text-xl font-bold text-foreground mb-4">
-									Specifications
-								</h2>
-								<div className="space-y-3">
-									{Object.entries(product.specifications).map(
-										([key, value]) => (
-											<div
-												key={key}
-												className="flex justify-between py-2 border-b border-border last:border-0"
-											>
-												<span className="font-medium text-foreground">
-													{key}
-												</span>
-												<span className="text-muted-foreground">{value}</span>
-											</div>
-										)
-									)}
-								</div>
-							</CardContent>
-						</Card>
-					</div>
+					{product.reviews.length !== 0 ? (
+						<div className="mt-12">
+							<h2 className="text-2xl font-bold text-foreground mb-6">
+								Customer Reviews
+							</h2>
 
-					{/* Reviews Section */}
-					<div className="mt-12">
-						<h2 className="text-2xl font-bold text-foreground mb-6">
-							Customer Reviews
-						</h2>
-
-						{/* Review Summary */}
-						<div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-							<Card>
-								<CardContent className="p-6 text-center">
-									<div className="text-4xl font-bold text-foreground mb-2">
-										{product.reviewStats.averageRating}
-									</div>
-									<div className="flex justify-center mb-2">
-										{[...Array(5)].map((_, i) => (
-											<Star
-												key={i}
-												className={`w-5 h-5 ${i < Math.floor(product.reviewStats.averageRating) ? "fill-primary text-primary" : "text-muted-foreground"}`}
-											/>
-										))}
-									</div>
-									<p className="text-muted-foreground">
-										Based on {product.reviewStats.totalReviews} reviews
-									</p>
-								</CardContent>
-							</Card>
-
-							<Card className="lg:col-span-2">
-								<CardContent className="p-6">
-									<h3 className="font-semibold text-foreground mb-4">
-										Rating Breakdown
-									</h3>
-									<div className="space-y-3">
-										{[5, 4, 3, 2, 1].map((rating) => (
-											<div
-												key={rating}
-												className="flex items-center gap-3"
-											>
-												<span className="text-sm text-foreground w-8">
-													{rating} ★
-												</span>
-												<div className="flex-1 bg-muted rounded-full h-2">
-													<div
-														className="bg-primary h-2 rounded-full transition-all duration-300"
-														style={{
-															width: `${(product.reviewStats.ratingBreakdown[rating as keyof typeof product.reviewStats.ratingBreakdown] / product.reviewStats.totalReviews) * 100}%`,
-														}}
-													/>
-												</div>
-												<span className="text-sm text-muted-foreground w-12">
-													{
-														product.reviewStats.ratingBreakdown[
-															rating as keyof typeof product.reviewStats.ratingBreakdown
-														]
-													}
-												</span>
-											</div>
-										))}
-									</div>
-								</CardContent>
-							</Card>
-						</div>
-
-						{/* Individual Reviews */}
-						<div className="space-y-6">
-							{product.reviews.map((review) => (
-								<Card key={review.id}>
-									<CardContent className="p-6">
-										<div className="flex items-start gap-4">
-											<Avatar className="w-12 h-12">
-												<AvatarImage
-													src={review.avatar}
-													alt={review.name}
+							{/* Review Summary */}
+							<div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+								<Card>
+									<CardContent className="p-6 text-center">
+										<div className="text-4xl font-bold text-foreground mb-2">
+											{reviewStats.averageRating.toFixed(1)}
+										</div>
+										<div className="flex justify-center mb-2">
+											{[...Array(5)].map((_, i) => (
+												<Star
+													key={i}
+													className={`w-5 h-5 ${
+														i < Math.floor(reviewStats.averageRating)
+															? "fill-primary text-primary"
+															: "text-muted-foreground"
+													}`}
 												/>
-												<AvatarFallback>
-													{review.name
-														.split(" ")
-														.map((n) => n[0])
-														.join("")}
-												</AvatarFallback>
-											</Avatar>
+											))}
+										</div>
+										<p className="text-muted-foreground">
+											Based on {reviewStats.totalReviews} reviews
+										</p>
+									</CardContent>
+								</Card>
 
-											<div className="flex-1 space-y-3">
-												<div className="flex items-center justify-between">
-													<div>
-														<div className="flex items-center gap-2">
-															<h4 className="font-semibold text-foreground">
-																{review.name}
-															</h4>
-															{review.verified && (
-																<Badge
-																	variant="secondary"
-																	className="text-xs"
-																>
-																	Verified Purchase
-																</Badge>
-															)}
-														</div>
-														<div className="flex items-center gap-2 mt-1">
-															<div className="flex">
-																{[...Array(5)].map((_, i) => (
-																	<Star
-																		key={i}
-																		className={`w-4 h-4 ${i < review.rating ? "fill-primary text-primary" : "text-muted-foreground"}`}
-																	/>
-																))}
-															</div>
-															<span className="text-sm text-muted-foreground">
-																{new Date(review.date).toLocaleDateString()}
-															</span>
-														</div>
+								<Card className="lg:col-span-2">
+									<CardContent className="p-6">
+										<h3 className="font-semibold text-foreground mb-4">
+											Rating Breakdown
+										</h3>
+										<div className="space-y-3">
+											{[5, 4, 3, 2, 1].map((rating) => (
+												<div
+													key={rating}
+													className="flex items-center gap-3"
+												>
+													<span className="text-sm text-foreground w-8">
+														{rating} ★
+													</span>
+													<div className="flex-1 bg-muted rounded-full h-2">
+														<div
+															className="bg-primary h-2 rounded-full transition-all duration-300"
+															style={{
+																width: `${
+																	(reviewStats.ratingBreakdown[
+																		rating as keyof typeof reviewStats.ratingBreakdown
+																	] /
+																		(reviewStats.totalReviews || 1)) *
+																	100
+																}%`,
+															}}
+														/>
 													</div>
+													<span className="text-sm text-muted-foreground w-12">
+														{
+															reviewStats.ratingBreakdown[
+																rating as keyof typeof reviewStats.ratingBreakdown
+															]
+														}
+													</span>
 												</div>
-
-												<div>
-													<h5 className="font-medium text-foreground mb-2">
-														{review.title}
-													</h5>
-													<p className="text-muted-foreground leading-relaxed">
-														{review.comment}
-													</p>
-												</div>
-
-												<div className="flex items-center gap-4">
-													<Button
-														variant="ghost"
-														size="sm"
-														className="text-muted-foreground"
-													>
-														<ThumbsUp className="w-4 h-4 mr-1" />
-														Helpful ({review.helpful})
-													</Button>
-												</div>
-											</div>
+											))}
 										</div>
 									</CardContent>
 								</Card>
-							))}
-						</div>
+							</div>
 
-						{/* Load More Reviews */}
-						<div className="text-center mt-8">
-							<Button variant="outline">Load More Reviews</Button>
+							{/* Individual Reviews */}
+							<div className="space-y-6">
+								{product.reviews.map((review) => (
+									<Card key={review.id}>
+										<CardContent className="p-6">
+											<div className="flex items-start gap-4">
+												<Avatar className="w-12 h-12">
+													<AvatarImage
+														src={review.reviewer?.image || ""}
+														alt={review.reviewer?.name || "Anonymous"}
+													/>
+													<AvatarFallback>
+														{review.reviewer?.name
+															?.split(" ")
+															.map((n: string) => n[0])
+															.join("") || "A"}
+													</AvatarFallback>
+												</Avatar>
+
+												<div className="flex-1 space-y-3">
+													<div className="flex items-center justify-between">
+														<div>
+															<div className="flex items-center gap-2">
+																<h4 className="font-semibold text-foreground">
+																	{review.reviewer?.name || "Anonymous"}
+																</h4>
+															</div>
+															<div className="flex items-center gap-2 mt-1">
+																<div className="flex">
+																	{[...Array(5)].map((_, i) => (
+																		<Star
+																			key={i}
+																			className={`w-4 h-4 ${
+																				i < review.starts
+																					? "fill-primary text-primary"
+																					: "text-muted-foreground"
+																			}`}
+																		/>
+																	))}
+																</div>
+																<span className="text-sm text-muted-foreground">
+																	{new Date(
+																		review.createdAt
+																	).toLocaleDateString()}
+																</span>
+															</div>
+														</div>
+													</div>
+
+													<div>
+														<p className="text-muted-foreground leading-relaxed">
+															{review.message}
+														</p>
+													</div>
+												</div>
+											</div>
+										</CardContent>
+									</Card>
+								))}
+							</div>
+
+							{product.reviews.length > 5 && (
+								<div className="text-center mt-8">
+									<Button variant="outline">Load More Reviews</Button>
+								</div>
+							)}
 						</div>
-					</div>
+					) : (
+						<Card>
+							<CardContent className="p-12">
+								<div className="text-center space-y-6">
+									<div className="w-48 h-48 mx-auto mb-6">
+										<img
+											src={"/no-reviews-illustration.png"}
+											alt="No reviews yet"
+											className="w-full h-full object-contain opacity-60"
+										/>
+									</div>
+									<div className="space-y-2">
+										<h3 className="text-2xl font-semibold text-foreground">
+											No Reviews Yet
+										</h3>
+										<p className="text-muted-foreground max-w-md mx-auto">
+											Be the first to share your experience with this product!
+											Your review helps other customers make informed decisions.
+										</p>
+									</div>
+								</div>
+							</CardContent>
+						</Card>
+					)}
+
+					<Card className="mb-8">
+						<CardContent className="p-6">
+							<h3 className="text-xl font-bold text-foreground mb-6">
+								Write a Review
+							</h3>
+							<form
+								onSubmit={handleSubmitReview}
+								className="space-y-6"
+							>
+								<div>
+									<Label className="text-base font-medium text-foreground mb-3 block">
+										Your Rating *
+									</Label>
+									<div className="flex items-center gap-1">
+										{[1, 2, 3, 4, 5].map((star) => (
+											<button
+												key={star}
+												type="button"
+												onClick={() => setReviewRating(star)}
+												onMouseEnter={() => setReviewRating(star)}
+												className="p-1 hover:scale-110 transition-transform"
+											>
+												<Star
+													className={`w-8 h-8 ${
+														star <= reviewRating
+															? "fill-primary text-primary"
+															: "text-muted-foreground hover:text-primary"
+													}`}
+												/>
+											</button>
+										))}
+										{reviewRating > 0 && (
+											<span className="ml-2 text-sm text-muted-foreground">
+												{reviewRating} out of 5 stars
+											</span>
+										)}
+									</div>
+								</div>
+								<div>
+									<Label
+										htmlFor="review-comment"
+										className="text-base font-medium text-foreground"
+									>
+										Your Review *
+									</Label>
+									<Textarea
+										id="review-comment"
+										value={reviewComment}
+										onChange={(e) => setReviewComment(e.target.value)}
+										placeholder="Tell others about your experience with this product. What did you like or dislike?"
+										className="mt-2 min-h-[120px]"
+										maxLength={1000}
+									/>
+									<p className="text-xs text-muted-foreground mt-1">
+										{reviewComment.length}/1000 characters
+									</p>
+								</div>
+
+								<Button
+									type="submit"
+									disabled={isSubmittingReview}
+									className="w-full sm:w-auto"
+								>
+									{isSubmittingReview ? "Submitting..." : "Submit Review"}
+								</Button>
+							</form>
+						</CardContent>
+					</Card>
 				</div>
 			</main>
 

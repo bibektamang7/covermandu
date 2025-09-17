@@ -1,49 +1,23 @@
+"use client";
 import { Footer } from "@/components/Footer";
 import { Navigation } from "@/components/Navigation";
-import NavigationLayout from "@/components/NavigationLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { useCart } from "@/context/cartContext";
+import Link from "next/link";
 
 const Cart = () => {
-	const cartItems = [
-		{
-			id: 1,
-			name: "iPhone 15 Pro Clear Case",
-			price: 2499,
-			quantity: 1,
-			image: "",
-			variant: "Clear",
-		},
-		{
-			id: 2,
-			name: "Screen Protector (2-Pack)",
-			price: 899,
-			quantity: 2,
-			image: "",
-			variant: "Tempered Glass",
-		},
-		{
-			id: 3,
-			name: "Wireless Charger",
-			price: 3499,
-			quantity: 1,
-			image: "",
-			variant: "15W Fast Charging",
-		},
-	];
+	const { cartItems, updateQuantity, removeFromCart, getTotalItems, getTotalPrice } = useCart();
 
-	const subtotal = cartItems.reduce(
-		(sum, item) => sum + item.price * item.quantity,
-		0
-	);
-	const shipping = 150;
+	const subtotal = getTotalPrice();
+	const shipping = cartItems.length > 0 ? 150 : 0;
 	const total = subtotal + shipping;
 
 	return (
 		<div className="min-h-screen">
-			<NavigationLayout/>
+			<Navigation />
 			<section className="pt-12 px-16">
 				<div className="pt-8 pb-4 border-b border-border px-4">
 					<div className="container mx-auto">
@@ -55,69 +29,100 @@ const Cart = () => {
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 						<div className="lg:col-span-2">
 							<div className="space-y-4">
-								{cartItems.map((item) => (
-									<Card key={item.id}>
-										<CardContent className="p-6">
-											<div className="flex items-center gap-4">
-												<div className="w-20 h-20 rounded-lg overflow-hidden bg-muted">
-													<img
-														src={item.image}
-														alt={item.name}
-														className="w-full h-full object-cover"
-													/>
-												</div>
-
-												<div className="flex-1">
-													<h3 className="font-semibold">{item.name}</h3>
-													<p className="text-sm text-muted-foreground mt-1">
-														{item.variant}
-													</p>
-													<p className="text-lg font-bold text-primary mt-2">
-														Rs. {item.price.toLocaleString()}
-													</p>
-												</div>
-
-												<div className="flex items-center gap-2">
-													<Button
-														variant="outline"
-														size="sm"
-														className="w-8 h-8 p-0"
-													>
-														<Minus className="w-4 h-4" />
-													</Button>
-													<span className="w-8 text-center font-medium">
-														{item.quantity}
-													</span>
-													<Button
-														variant="outline"
-														size="sm"
-														className="w-8 h-8 p-0"
-													>
-														<Plus className="w-4 h-4" />
-													</Button>
-												</div>
-
-												<Button
-													variant="ghost"
-													size="sm"
-													className="text-destructive hover:text-destructive"
-												>
-													<Trash2 className="w-4 h-4" />
-												</Button>
+								{cartItems.length === 0 ? (
+									<Card>
+										<CardContent className="p-12 text-center">
+											<div className="w-24 h-24 mx-auto mb-6">
+												<img
+													src="/empty-cart.png"
+													alt="Empty cart"
+													className="w-full h-full object-contain opacity-60"
+												/>
 											</div>
+											<h3 className="text-xl font-semibold mb-2">
+												Your cart is empty
+											</h3>
+											<p className="text-muted-foreground mb-6">
+												Add some products to your cart
+											</p>
+											<Link href="/products">
+												<Button>Continue Shopping</Button>
+											</Link>
 										</CardContent>
 									</Card>
-								))}
+								) : (
+									cartItems.map((item) => {
+										// Calculate discounted price
+										const discountedPrice = item.product.price - (item.product.discount / 100) * item.product.price;
+										const itemTotal = discountedPrice * item.quantity;
+										
+										return (
+											<Card key={item.variant.id}>
+												<CardContent className="p-6">
+													<div className="flex items-center gap-4">
+														<div className="w-20 h-20 rounded-lg overflow-hidden bg-muted">
+															<img
+																src={item.variant.image}
+																alt={item.variant.color}
+																className="w-full h-full object-cover"
+															/>
+														</div>
+
+														<div className="flex-1">
+															<h3 className="font-semibold">{item.product.name}</h3>
+															<p className="text-sm text-muted-foreground mt-1">
+																Variant: {item.variant.color}
+															</p>
+															<p className="text-lg font-bold text-primary mt-2">
+																Rs. {itemTotal.toLocaleString()}
+															</p>
+														</div>
+
+														<div className="flex items-center gap-2">
+															<Button
+																variant="outline"
+																size="sm"
+																className="w-8 h-8 p-0"
+																onClick={() => updateQuantity(item.variant.id, item.quantity - 1)}
+															>
+																<Minus className="w-4 h-4" />
+															</Button>
+															<span className="w-8 text-center font-medium">
+																{item.quantity}
+															</span>
+															<Button
+																variant="outline"
+																size="sm"
+																className="w-8 h-8 p-0"
+																onClick={() => updateQuantity(item.variant.id, item.quantity + 1)}
+															>
+																<Plus className="w-4 h-4" />
+															</Button>
+														</div>
+
+														<Button
+															variant="ghost"
+															size="sm"
+															className="text-destructive hover:text-destructive"
+															onClick={() => removeFromCart(item.variant.id)}
+														>
+															<Trash2 className="w-4 h-4" />
+														</Button>
+													</div>
+												</CardContent>
+											</Card>
+										);
+									})
+								)}
 							</div>
 
 							<div className="mt-8">
-								<Button
-									variant="outline"
-									className="w-full sm:w-auto"
-								>
-									<ShoppingBag className="w-4 h-4 mr-2" />
-									Continue Shopping
-								</Button>
+								<Link href="/products">
+									<Button variant="outline" className="w-full sm:w-auto">
+										<ShoppingBag className="w-4 h-4 mr-2" />
+										Continue Shopping
+									</Button>
+								</Link>
 							</div>
 						</div>
 
@@ -147,13 +152,11 @@ const Cart = () => {
 										<Button
 											className="w-full btn-hero"
 											size="lg"
+											disabled={cartItems.length === 0}
 										>
 											Proceed to Checkout
 										</Button>
-										<Button
-											variant="outline"
-											className="w-full"
-										>
+										<Button variant="outline" className="w-full">
 											Save for Later
 										</Button>
 									</div>
@@ -208,11 +211,7 @@ const Cart = () => {
 										<p className="text-primary font-bold mb-3">
 											{product.price}
 										</p>
-										<Button
-											size="sm"
-											variant="outline"
-											className="w-full"
-										>
+										<Button size="sm" variant="outline" className="w-full">
 											Add to Cart
 										</Button>
 									</CardContent>
