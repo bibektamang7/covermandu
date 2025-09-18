@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  googleId  String     @unique
+  name      String
+  image     String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  reviews   Review[]
+  cartItems Cart[]
+  wishlist  Wishlist[]
+
+  role Role @default(USER)
+
+  @@index([email])
+}
+
+enum Tag {
+  TRENDING
+  NEW
+  MOST_LIKED
+  POPULAR
+  PREMIUM
+}
+
+enum Category {
+  // Protection-based categories
+  SLIM_CASE
+  CLEAR_CASE
+  RUGGED_CASE
+
+  // Material-based categories
+  SILICONE_CASE
+  LEATHER_CASE
+  WOODEN_CASE
+
+  // Functionality/Style-based categories
+  WALLET_CASE
+  STAND_CASE
+  MAGSAFE_COMPATIBLE
+  FLIP_CASE
+}
+
+enum PhoneModel {
+  IPHONE_15
+  IPHONE_15_PRO
+  IPHONE_15_PRO_MAX
+  IPHONE_14
+  IPHONE_14_PRO
+  IPHONE_14_PRO_MAX
+  // Add other models as needed
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  name        String
+  description String
+  price       Decimal          @db.Decimal(10, 2)
+  discount    Int              @default(0)
+  category    Category
+  phoneModel  PhoneModel
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  reviews     Review[]
+  wishlists   Wishlist[]
+  variants    ProductVariant[]
+  tag         Tag              @default(NEW)
+
+  @@index([name])
+  @@index([price])
+  @@index([phoneModel])
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  Product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  color     String
+  stock     Int     @db.SmallInt
+  image     String
+  sku       String  @unique
+  Cart      Cart[]
+
+  @@index([sku])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  message    String
+  stars      Int      @db.SmallInt
+  reviewer   User     @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewerId String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String
+  createdAt  DateTime @default(now())
+
+  @@index([productId])
+  @@index([reviewerId])
+}
+
+model Cart {
+  id               String         @id @default(cuid())
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  productVariantId String
+  quantity         Int
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([userId, productVariantId])
+  @@index([userId])
+  @@index([productVariantId])
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+}
