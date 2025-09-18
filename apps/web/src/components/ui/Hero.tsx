@@ -10,7 +10,7 @@ export const Hero = () => {
 				<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-accent/20 to-primary/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
 			</div>
 
-			<div className="container mx-auto px-6 py-20 relative z-10">
+			<div className="w-full px-6 py-20 relative z-10">
 				<div className="grid lg:grid-cols-2 gap-12 items-center">
 					<div className="space-y-8 text-center lg:text-left">
 						<div className="space-y-4">

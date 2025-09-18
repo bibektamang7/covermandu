@@ -6,9 +6,11 @@ import { Menu, X, ShoppingCart, Search, User } from "lucide-react";
 import { SearchDialog } from "@/components/SearchDialog";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useCart } from "@/context/cartContext";
 
 export const Navigation = () => {
 	const session = useSession();
+	const { getTotalItems } = useCart();
 	const [isOpen, setIsOpen] = useState(false);
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -30,7 +32,7 @@ export const Navigation = () => {
 					: "bg-transparent"
 			}`}
 		>
-			<div className="container mx-auto px-6">
+			<div className="  mx-auto px-6">
 				<div className="flex items-center justify-between h-16 lg:h-20">
 					<div className="flex items-center">
 						<Link
@@ -79,7 +81,7 @@ export const Navigation = () => {
 							<Link href="/cart">
 								<ShoppingCart className="w-5 h-5" />
 								<span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
-									2
+									{getTotalItems()}
 								</span>
 							</Link>
 						</Button>
@@ -118,7 +120,7 @@ export const Navigation = () => {
 
 			{isOpen && (
 				<div className="lg:hidden bg-background/95 backdrop-blur-md border-b border-border/50">
-					<div className="container mx-auto px-6 py-4">
+					<div className="  mx-auto px-6 py-4">
 						<div className="flex flex-col space-y-4">
 							<div className="flex gap-3 pt-4 border-t border-border/50">
 								<Button

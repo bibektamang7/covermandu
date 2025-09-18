@@ -17,13 +17,12 @@ import {
 	RotateCcw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useGetProduct } from "@/hooks/useGetProduct";
+import { useGetProduct } from "@/hooks/useProducts";
 import { Product, Review } from "@/types/product";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import BackButton from "@/components/BackButton";
 import { useCart } from "@/context/cartContext";
@@ -99,7 +98,7 @@ export default function ProductDetail() {
 		return (
 			<div className="min-h-screen bg-background">
 				<Navigation />
-				<main className="container mx-auto flex-grow flex flex-col justify-center items-center">
+				<main className="  mx-auto flex-grow flex flex-col justify-center items-center">
 					<h1 className="text-2xl font-bold text-foreground mb-4">
 						Product Not Found
 					</h1>
@@ -142,7 +141,7 @@ export default function ProductDetail() {
 		<div className="min-h-screen bg-background">
 			<Navigation />
 
-			<main className="container mx-auto px-20 py-16">
+			<main className="  mx-auto px-20 py-16">
 				<BackButton />
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
 					<div className="space-y-4 h-fit">
@@ -209,6 +208,18 @@ export default function ProductDetail() {
 										</span>
 										<Badge variant="destructive">{product.discount}% OFF</Badge>
 									</>
+								)}
+							</div>
+							<div className="flex items-center gap-3 mt-2">
+								{product.category && (
+									<Badge variant="outline">
+										Category: {product.category.toString().replaceAll("_", " ")}
+									</Badge>
+								)}
+								{product.phoneModel && (
+									<Badge variant="outline">
+										Model: {product.phoneModel.toString().replaceAll("_", " ")}
+									</Badge>
 								)}
 							</div>
 						</div>

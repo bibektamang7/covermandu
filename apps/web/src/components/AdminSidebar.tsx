@@ -1,5 +1,5 @@
 "use client";
-import { Package, Users, BarChart3, Settings } from "lucide-react";
+import { Package, Users, BarChart3, Settings, Plus } from "lucide-react";
 import Link from "next/link";
 import {
 	Sidebar,
@@ -17,13 +17,13 @@ import {
 const menuItems = [
 	{ title: "Products", url: "/admin", icon: Package },
 	{ title: "Users", url: "/admin/users", icon: Users },
+	{ title: "Add Product", url: "/admin/add-product", icon: Plus },
 	{ title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
 	{ title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
 export function AdminSidebar() {
 	const { state } = useSidebar();
-
 	return (
 		<Sidebar
 			className={state === "collapsed" ? "w-14" : "w-64"}

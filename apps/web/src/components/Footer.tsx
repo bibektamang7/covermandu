@@ -13,7 +13,7 @@ export const Footer = () => {
 	return (
 		<footer className="bg-gradient-to-br from-muted/30 to-secondary/20 border-t border-border/50">
 			<div className="border-b border-border/50">
-				<div className="container mx-auto px-6 py-12">
+				<div className="  mx-auto px-6 py-12">
 					<div className="text-center space-y-4 max-w-2xl mx-auto">
 						<h3 className="text-2xl font-bold">Stay Updated</h3>
 						<p className="text-muted-foreground">
@@ -32,7 +32,7 @@ export const Footer = () => {
 			</div>
 
 			{/* Main Footer */}
-			<div className="container mx-auto px-6 py-12">
+			<div className="  mx-auto px-6 py-12">
 				<div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
 					{/* Brand Section */}
 					<div className="space-y-4">
@@ -128,7 +128,7 @@ export const Footer = () => {
 			</div>
 
 			<div className="border-t border-border/50">
-				<div className="container mx-auto px-6 py-6">
+				<div className="  mx-auto px-6 py-6">
 					<div className="flex flex-col md:flex-row justify-between items-center gap-4">
 						<p className="text-muted-foreground text-sm">
 							© 2025 Covermandu. All rights reserved.

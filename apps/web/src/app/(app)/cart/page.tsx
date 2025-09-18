@@ -9,7 +9,13 @@ import { useCart } from "@/context/cartContext";
 import Link from "next/link";
 
 const Cart = () => {
-	const { cartItems, updateQuantity, removeFromCart, getTotalItems, getTotalPrice } = useCart();
+	const {
+		cartItems,
+		updateQuantity,
+		removeFromCart,
+		getTotalItems,
+		getTotalPrice,
+	} = useCart();
 
 	const subtotal = getTotalPrice();
 	const shipping = cartItems.length > 0 ? 150 : 0;
@@ -20,12 +26,12 @@ const Cart = () => {
 			<Navigation />
 			<section className="pt-12 px-16">
 				<div className="pt-8 pb-4 border-b border-border px-4">
-					<div className="container mx-auto">
+					<div className="mx-auto">
 						<h1 className="text-2xl font-bold">Shopping Cart</h1>
 					</div>
 				</div>
 
-				<div className="container mx-auto pb-8 px-4">
+				<div className="mx-auto pb-8 px-4">
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 						<div className="lg:col-span-2">
 							<div className="space-y-4">
@@ -46,16 +52,20 @@ const Cart = () => {
 												Add some products to your cart
 											</p>
 											<Link href="/products">
-												<Button>Continue Shopping</Button>
+												<Button className="hover:cursor-pointer">
+													Continue Shopping
+												</Button>
 											</Link>
 										</CardContent>
 									</Card>
 								) : (
 									cartItems.map((item) => {
 										// Calculate discounted price
-										const discountedPrice = item.product.price - (item.product.discount / 100) * item.product.price;
+										const discountedPrice =
+											item.product.price -
+											(item.product.discount / 100) * item.product.price;
 										const itemTotal = discountedPrice * item.quantity;
-										
+
 										return (
 											<Card key={item.variant.id}>
 												<CardContent className="p-6">
@@ -69,7 +79,9 @@ const Cart = () => {
 														</div>
 
 														<div className="flex-1">
-															<h3 className="font-semibold">{item.product.name}</h3>
+															<h3 className="font-semibold">
+																{item.product.name}
+															</h3>
 															<p className="text-sm text-muted-foreground mt-1">
 																Variant: {item.variant.color}
 															</p>
@@ -83,7 +95,12 @@ const Cart = () => {
 																variant="outline"
 																size="sm"
 																className="w-8 h-8 p-0"
-																onClick={() => updateQuantity(item.variant.id, item.quantity - 1)}
+																onClick={() =>
+																	updateQuantity(
+																		item.variant.id,
+																		item.quantity - 1
+																	)
+																}
 															>
 																<Minus className="w-4 h-4" />
 															</Button>
@@ -94,7 +111,12 @@ const Cart = () => {
 																variant="outline"
 																size="sm"
 																className="w-8 h-8 p-0"
-																onClick={() => updateQuantity(item.variant.id, item.quantity + 1)}
+																onClick={() =>
+																	updateQuantity(
+																		item.variant.id,
+																		item.quantity + 1
+																	)
+																}
 															>
 																<Plus className="w-4 h-4" />
 															</Button>
@@ -118,7 +140,10 @@ const Cart = () => {
 
 							<div className="mt-8">
 								<Link href="/products">
-									<Button variant="outline" className="w-full sm:w-auto">
+									<Button
+										variant="outline"
+										className="w-full sm:w-auto"
+									>
 										<ShoppingBag className="w-4 h-4 mr-2" />
 										Continue Shopping
 									</Button>
@@ -156,7 +181,10 @@ const Cart = () => {
 										>
 											Proceed to Checkout
 										</Button>
-										<Button variant="outline" className="w-full">
+										<Button
+											variant="outline"
+											className="w-full"
+										>
 											Save for Later
 										</Button>
 									</div>
@@ -168,7 +196,7 @@ const Cart = () => {
 
 				{/* Recommended Products */}
 				<section className="py-16 bg-muted/50">
-					<div className="container mx-auto px-6">
+					<div className="  mx-auto px-6">
 						<h2 className="text-2xl font-bold mb-8">You Might Also Like</h2>
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 							{[
@@ -211,7 +239,11 @@ const Cart = () => {
 										<p className="text-primary font-bold mb-3">
 											{product.price}
 										</p>
-										<Button size="sm" variant="outline" className="w-full">
+										<Button
+											size="sm"
+											variant="outline"
+											className="w-full"
+										>
 											Add to Cart
 										</Button>
 									</CardContent>

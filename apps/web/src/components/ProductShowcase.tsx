@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, ShoppingCart, Star } from "lucide-react";
 import Link from "next/link";
 import { Product } from "@/types/product";
-import { useProductsQuery } from "@/hooks/useProductsQuery";
+import { useProductsQuery } from "@/hooks/useProducts";
 
 export const ProductShowcase = () => {
 	const { data, isError, isLoading } = useProductsQuery();
@@ -17,7 +17,7 @@ export const ProductShowcase = () => {
 	}
 	return (
 		<section className="py-20 px-16 bg-gradient-to-b from-background to-secondary/20">
-			<div className="container mx-auto px-6">
+			<div className="  mx-auto px-6">
 				<div className="text-center mb-16 space-y-4">
 					<h2 className="text-4xl lg:text-5xl font-bold text-balance">
 						Our <span className="text-gradient">Premium Collection</span>
