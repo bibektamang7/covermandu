@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
@@ -19,27 +20,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Upload, X, Plus, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
-
-interface AddProductFormProps {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-}
+import { categories, phoneModels } from "@/lib/constants";
 
 interface ProductVariant {
 	color: string;
 	stock: number;
 	image: File | null;
 }
-const AddProductForm = ({ open, onOpenChange }: AddProductFormProps) => {
+
+const AddProductForm = () => {
 	const { data } = useSession();
 	const [formData, setFormData] = useState({
 		name: "",
@@ -47,6 +38,8 @@ const AddProductForm = ({ open, onOpenChange }: AddProductFormProps) => {
 		price: 800,
 		discount: 0,
 		tag: "NEW",
+		category: "",
+		phoneModel: "",
 	});
 
 	const [variants, setVariants] = useState<ProductVariant[]>([
@@ -73,9 +66,10 @@ const AddProductForm = ({ open, onOpenChange }: AddProductFormProps) => {
 				price: 800,
 				discount: 0,
 				tag: "NEW",
+				category: "",
+				phoneModel: "",
 			});
 			setVariants([{ color: "", stock: 0, image: null }]);
-			onOpenChange(false);
 		},
 		onError: (err) => {
 			console.error("Error creating product:", err);
@@ -167,6 +161,7 @@ const AddProductForm = ({ open, onOpenChange }: AddProductFormProps) => {
 				discount: formData.discount ? Number(formData.discount) : 0,
 				variants: updatedVariants,
 			};
+			console.log("this is palyload", payload);
 
 			await createProduct.mutateAsync(payload);
 		} catch (err) {
@@ -176,24 +171,20 @@ const AddProductForm = ({ open, onOpenChange }: AddProductFormProps) => {
 	};
 
 	return (
-		<Dialog
-			open={open}
-			onOpenChange={onOpenChange}
-		>
-			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle>Add New Product</DialogTitle>
-					<DialogDescription>
-						Create a new product for your store. Fill in all the required
-						information below.
-					</DialogDescription>
-				</DialogHeader>
+		<section className="w-full">
+			<div>
+				<h2>Add New Product</h2>
+				<p>
+					Create a new product for your store. Fill in all the required
+					information below.
+				</p>
+			</div>
 
-				<form
-					onSubmit={handleSubmit}
-					className="space-y-6"
-				>
-					{/* Basic Information */}
+			<form
+				onSubmit={handleSubmit}
+				className="space-y-6"
+			>
+				<div className="grid lg:grid-cols-2 lg:gap-8">
 					<Card>
 						<CardHeader>
 							<CardTitle className="text-lg">Basic Information</CardTitle>
@@ -278,163 +269,209 @@ const AddProductForm = ({ open, onOpenChange }: AddProductFormProps) => {
 									/>
 								</div>
 							</div>
-						</CardContent>
-					</Card>
 
-					<Card>
-						<CardHeader className="flex flex-row items-center justify-between">
-							<div>
-								<CardTitle className="text-lg">Product Variants</CardTitle>
-								<CardDescription>
-									Add different colors/variants of your product
-								</CardDescription>
-							</div>
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={addVariant}
-							>
-								<Plus className="w-4 h-4 mr-2" />
-								Add Variant
-							</Button>
-						</CardHeader>
-						<CardContent className="space-y-6">
-							{variants.map((variant, index) => (
-								<div
-									key={index}
-									className="border rounded-lg p-4 space-y-4"
+							<div className="space-y-2">
+								<Label htmlFor="category">Category *</Label>
+								<Select
+									value={formData.category}
+									onValueChange={(value) =>
+										handleInputChange("category", value)
+									}
 								>
-									<div className="flex items-center justify-between">
-										<h4 className="font-medium">Variant {index + 1}</h4>
-										{variants.length > 1 && (
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												onClick={() => removeVariant(index)}
-												className="text-destructive hover:text-destructive"
+									<SelectTrigger>
+										<SelectValue placeholder="Select category" />
+									</SelectTrigger>
+									<SelectContent>
+										{categories.map((categoryValue) => (
+											<SelectItem
+												key={categoryValue}
+												value={categoryValue}
 											>
-												<X className="w-4 h-4" />
-											</Button>
-										)}
-									</div>
-
-									<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-										<div className="space-y-2">
-											<Label htmlFor={`color-${index}`}>Color *</Label>
-											<Input
-												id={`color-${index}`}
-												value={variant.color}
-												onChange={(e) =>
-													handleVariantChange(index, "color", e.target.value)
-												}
-												placeholder="e.g., Blue, Red, Black"
-												required
-											/>
-										</div>
-										<div className="space-y-2">
-											<Label htmlFor={`stock-${index}`}>Stock *</Label>
-											<Input
-												id={`stock-${index}`}
-												type="number"
-												value={variant.stock}
-												onChange={(e) =>
-													handleVariantChange(
-														index,
-														"stock",
-														Number(e.target.value)
-													)
-												}
-												placeholder="50"
-												required
-											/>
-										</div>
-									</div>
-
-									<div className="space-y-2">
-										<Label htmlFor={`image-${index}`}>Variant Image</Label>
-										<div className="flex items-center gap-4">
-											<div className="flex-1">
-												<div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
-													<div className="text-center">
-														<Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-														<div className="mt-2">
-															<Label
-																htmlFor={`image-${index}`}
-																className="cursor-pointer"
-															>
-																<span className="text-sm font-medium text-foreground">
-																	Click to upload image for{" "}
-																	{variant.color || `Variant ${index + 1}`}
-																</span>
-															</Label>
-															<Input
-																id={`image-${index}`}
-																type="file"
-																accept="image/*"
-																onChange={(e) => handleImageUpload(index, e)}
-																className="hidden"
-															/>
-														</div>
-													</div>
-												</div>
-											</div>
-
-											{variant.image && (
-												<div className="relative">
-													<img
-														src={URL.createObjectURL(variant.image)}
-														alt={`${variant.color} variant`}
-														className="w-20 h-20 object-cover rounded-lg border"
-													/>
-													<Button
-														type="button"
-														variant="destructive"
-														size="sm"
-														className="absolute -top-2 -right-2 h-6 w-6 p-0"
-														onClick={() =>
-															handleVariantChange(index, "image", null)
-														}
-													>
-														<X className="h-3 w-3" />
-													</Button>
-												</div>
-											)}
-										</div>
-									</div>
-								</div>
-							))}
+												{categoryValue.replaceAll("_", " ")}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="model">Model *</Label>
+								<Select
+									value={formData.phoneModel}
+									onValueChange={(value) =>
+										handleInputChange("phoneModel", value)
+									}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select model" />
+									</SelectTrigger>
+									<SelectContent>
+										{phoneModels.map((modelValue) => (
+											<SelectItem
+												key={modelValue}
+												value={modelValue}
+											>
+												{modelValue.replaceAll("_", " ")}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
 						</CardContent>
 					</Card>
+				</div>
 
-					<div className="flex justify-end gap-3 pt-4 border-t">
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between">
+						<div>
+							<CardTitle className="text-lg">Product Variants</CardTitle>
+							<CardDescription>
+								Add different colors/variants of your product
+							</CardDescription>
+						</div>
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => onOpenChange(false)}
-							disabled={createProduct.isPending}
+							size="sm"
+							onClick={addVariant}
 						>
-							Cancel
+							<Plus className="w-4 h-4 mr-2" />
+							Add Variant
 						</Button>
-						<Button
-							type="submit"
-							className="btn-hero"
-							disabled={createProduct.isPending}
-						>
-							{createProduct.isPending ? (
-								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-									Saving...
-								</>
-							) : (
-								"Add Product"
-							)}
-						</Button>
-					</div>
-				</form>
-			</DialogContent>
-		</Dialog>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						{variants.map((variant, index) => (
+							<div
+								key={index}
+								className="border rounded-lg p-4 space-y-4"
+							>
+								<div className="flex items-center justify-between">
+									<h4 className="font-medium">Variant {index + 1}</h4>
+									{variants.length > 1 && (
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											onClick={() => removeVariant(index)}
+											className="text-destructive hover:text-destructive"
+										>
+											<X className="w-4 h-4" />
+										</Button>
+									)}
+								</div>
+
+								<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+									<div className="space-y-2">
+										<Label htmlFor={`color-${index}`}>Color *</Label>
+										<Input
+											id={`color-${index}`}
+											value={variant.color}
+											onChange={(e) =>
+												handleVariantChange(index, "color", e.target.value)
+											}
+											placeholder="e.g., Blue, Red, Black"
+											required
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor={`stock-${index}`}>Stock *</Label>
+										<Input
+											id={`stock-${index}`}
+											type="number"
+											value={variant.stock}
+											onChange={(e) =>
+												handleVariantChange(
+													index,
+													"stock",
+													Number(e.target.value)
+												)
+											}
+											placeholder="50"
+											required
+										/>
+									</div>
+								</div>
+
+								<div className="space-y-2">
+									<Label htmlFor={`image-${index}`}>Variant Image</Label>
+									<div className="flex items-center gap-4">
+										<div className="flex-1">
+											<div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
+												<div className="text-center">
+													<Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+													<div className="mt-2">
+														<Label
+															htmlFor={`image-${index}`}
+															className="cursor-pointer"
+														>
+															<span className="text-sm font-medium text-foreground">
+																Click to upload image for{" "}
+																{variant.color || `Variant ${index + 1}`}
+															</span>
+														</Label>
+														<Input
+															id={`image-${index}`}
+															type="file"
+															accept="image/*"
+															onChange={(e) => handleImageUpload(index, e)}
+															className="hidden"
+														/>
+													</div>
+												</div>
+											</div>
+										</div>
+
+										{variant.image && (
+											<div className="relative">
+												<img
+													src={URL.createObjectURL(variant.image)}
+													alt={`${variant.color} variant`}
+													className="w-20 h-20 object-cover rounded-lg border"
+												/>
+												<Button
+													type="button"
+													variant="destructive"
+													size="sm"
+													className="absolute -top-2 -right-2 h-6 w-6 p-0"
+													onClick={() =>
+														handleVariantChange(index, "image", null)
+													}
+												>
+													<X className="h-3 w-3" />
+												</Button>
+											</div>
+										)}
+									</div>
+								</div>
+							</div>
+						))}
+					</CardContent>
+				</Card>
+
+				<div className="flex justify-end gap-3 pt-4 border-t">
+					<Button
+						type="button"
+						variant="outline"
+						disabled={createProduct.isPending}
+					>
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						className="btn-hero"
+						disabled={createProduct.isPending}
+					>
+						{createProduct.isPending ? (
+							<>
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								Saving...
+							</>
+						) : (
+							"Add Product"
+						)}
+					</Button>
+				</div>
+			</form>
+		</section>
 	);
 };
 

@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import AddProductForm from "@/components/AddProductForm";
 import EditProductForm from "@/components/EditProductForm";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,48 +18,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Edit, Trash2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 const ProductsManagement = () => {
 	const [showAddProduct, setShowAddProduct] = useState(false);
 	const [showEditProduct, setShowEditProduct] = useState(false);
 	const [editingProduct, setEditingProduct] = useState<any>(null);
-
-	// Mock product data
-	const products = [
-		{
-			id: 1,
-			name: "iPhone 15 Pro Max Case",
-			category: "Cases",
-			price: "Rs. 2,999",
-			stock: 45,
-			status: "Active",
-		},
-		{
-			id: 2,
-			name: "MagSafe Wireless Charger",
-			category: "Accessories",
-			price: "Rs. 4,999",
-			stock: 23,
-			status: "Active",
-		},
-		{
-			id: 3,
-			name: "Screen Protector",
-			category: "Protection",
-			price: "Rs. 1,299",
-			stock: 0,
-			status: "Out of Stock",
-		},
-		{
-			id: 4,
-			name: "Phone Stand",
-			category: "Accessories",
-			price: "Rs. 1,799",
-			stock: 67,
-			status: "Active",
-		},
-	];
 
 	const getStatusColor = (status: string) => {
 		switch (status.toLowerCase()) {
@@ -71,11 +34,6 @@ const ProductsManagement = () => {
 			default:
 				return "bg-gray-100 text-gray-800";
 		}
-	};
-
-	const handleEditProduct = (product: any) => {
-		setEditingProduct(product);
-		setShowEditProduct(true);
 	};
 
 	return (
@@ -105,7 +63,7 @@ const ProductsManagement = () => {
 								<TableHead className="text-right">Actions</TableHead>
 							</TableRow>
 						</TableHeader>
-						<TableBody>
+						{/* <TableBody>
 							{products.map((product) => (
 								<TableRow key={product.id}>
 									<TableCell className="font-medium">{product.name}</TableCell>
@@ -141,15 +99,10 @@ const ProductsManagement = () => {
 									</TableCell>
 								</TableRow>
 							))}
-						</TableBody>
+						</TableBody> */}
 					</Table>
 				</CardContent>
 			</Card>
-
-			<AddProductForm
-				open={showAddProduct}
-				onOpenChange={setShowAddProduct}
-			/>
 
 			<EditProductForm
 				open={showEditProduct}
