@@ -1,3 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, PhoneModel, Category } from "@prisma/client";
 
-export const prisma = new PrismaClient();
+const prisma = new PrismaClient();
+
+export { prisma, PhoneModel, Category };
