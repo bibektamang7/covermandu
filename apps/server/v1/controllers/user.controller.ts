@@ -5,6 +5,7 @@ import {
 	registerUserSchema,
 } from "../validation/user.validation";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 export const loginUser = async (req: Request, res: Response) => {
 	try {
@@ -21,10 +22,16 @@ export const loginUser = async (req: Request, res: Response) => {
 			res.status(404).json({ message: "User not found" });
 			return;
 		}
-		console.log("this is token ", process.env.TOKEN_SECRET)
 		const token = jwt.sign({ id: user.id }, process.env.TOKEN_SECRET!, {
 			expiresIn: "7d",
 		});
+		const options = {
+			secure: false,
+			httpOnly: true,
+			maxAge: 60 * 60 * 60 * 24 * 7,
+		};
+
+		res.cookie("access_token", token, options);
 		res.status(200).json({ user, token });
 	} catch (error) {
 		console.error("Failed to login user", error);
@@ -33,6 +40,7 @@ export const loginUser = async (req: Request, res: Response) => {
 };
 
 export const registerUser = async (req: Request, res: Response) => {
+	console.log("is it here or not in register");
 	try {
 		const parsed = registerUserSchema.safeParse(req.body);
 		if (!parsed.success) {
@@ -60,9 +68,18 @@ export const registerUser = async (req: Request, res: Response) => {
 			res.status(400).json({ message: "Failed to create user" });
 			return;
 		}
+
 		const token = jwt.sign({ id: user.id }, process.env.TOKEN_SECRET!, {
 			expiresIn: "7d",
 		});
+
+		const options = {
+			secure: false,
+			httpOnly: true,
+			maxAge: 60 * 60 * 24 * 7,
+		};
+
+		res.cookie("access_token", token, options);
 		res.status(200).json({ user, token });
 	} catch (error) {
 		console.error("Failed to register user", error);
@@ -70,7 +87,27 @@ export const registerUser = async (req: Request, res: Response) => {
 	}
 };
 
-export const getSignedUrl = async (req: Request, res: Response) => {};
+export const getSignedUrl = async (req: Request, res: Response) => {
+	try {
+		const token = crypto.randomBytes(16).toString("hex");
+		const expire = Math.floor(Date.now() / 1000) + 120;
+		const signature = crypto
+			.createHmac("sha1", process.env.IMAGEKIT_PRIVATE_KEY!)
+			.update(token + expire)
+			.digest("hex");
+
+		res.status(200).json({
+			token,
+			expire,
+			signature,
+			publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+			// uploadEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+		});
+	} catch (error) {
+		console.error("Error generating upload signature: ", error);
+		res.send(500).json({ message: "Failed to generate upload signature" });
+	}
+};
 
 export const getUser = (req: Request, res: Response) => {
 	res.status(200).json({ user: req.user });

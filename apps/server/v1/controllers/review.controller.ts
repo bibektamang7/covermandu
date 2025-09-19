@@ -9,9 +9,9 @@ export const createReview = async (req: Request, res: Response) => {
 			res.status(400).json({ message: "Validation error" });
 			return;
 		}
-		const { message, productId, reviewerId, stars } = parsed.data;
+		const { message, productId, stars } = parsed.data;
 		const review = await prisma.review.create({
-			data: { message, productId, reviewerId, stars },
+			data: { message, productId, reviewerId: req.user.id, stars },
 		});
 		if (!review) {
 			res.status(400).json({ message: "Failed to create review" });

@@ -1,40 +1,99 @@
 import type { Request, Response } from "express";
-import { prisma } from "db";
+import { prisma, PhoneModel, Category } from "db";
 import {
 	createProductSchema,
 	updateProductSchema,
 } from "../validation/product.validation";
 import jwt from "jsonwebtoken";
-import { uint32 } from "zod";
+
+const categoryLabels: Record<Category, string> = {
+	[Category.SLIM_CASE]: "slim case",
+	[Category.CLEAR_CASE]: "clear case",
+	[Category.RUGGED_CASE]: "rugged case",
+	[Category.SILICONE_CASE]: "silicone case",
+	[Category.LEATHER_CASE]: "leather case",
+	[Category.WOODEN_CASE]: "wooden case",
+	[Category.WALLET_CASE]: "wallet case",
+	[Category.STAND_CASE]: "stand case",
+	[Category.MAGSAFE_COMPATIBLE]: "magsafe compatible",
+	[Category.FLIP_CASE]: "flip case",
+};
+
+const phoneModelLabels: Record<PhoneModel, string> = {
+	[PhoneModel.IPHONE_15]: "iphone 15",
+	[PhoneModel.IPHONE_15_PRO]: "iphone 15 pro",
+	[PhoneModel.IPHONE_15_PRO_MAX]: "iphone 15 pro max",
+	[PhoneModel.IPHONE_14]: "iphone 14",
+	[PhoneModel.IPHONE_14_PRO]: "iphone 14 pro",
+	[PhoneModel.IPHONE_14_PRO_MAX]: "iphone 14 pro max",
+};
+
+function findMatchingCategories(search: string): Category[] {
+	return Object.entries(categoryLabels)
+		.filter(([_, label]) => label.includes(search))
+		.map(([enumValue]) => enumValue as Category);
+}
+
+function findMatchingPhoneModels(search: string): PhoneModel[] {
+	return Object.entries(phoneModelLabels)
+		.filter(([_, label]) => label.includes(search))
+		.map(([enumValue]) => enumValue as PhoneModel);
+}
 
 export const getProducts = async (req: Request, res: Response) => {
 	try {
 		const page = Number(req.query.page) || 1;
-		const limit = Number(req.query.limit) || 10;
+		const limit = Number(req.query.limit) || 12;
 		const skip = (page - 1) * limit;
+
 		const search = (req.query.search as string) || "";
+		const category = (req.query.category as string) || "";
+		const phoneModel = (req.query.phoneModel as string) || "";
 
 		const sortBy = (req.query.sortBy as string) || "createdAt";
-		const order = (req.query.order as string) || ("desc" as "asc" | "desc");
+		const order = (req.query.order as "asc" | "desc") || "desc";
+
+		const whereConditions: any = {};
+		const normalizeSearch = search.toLowerCase().trim();
+
+		if (search) {
+			const categories = findMatchingCategories(search);
+			const phoneModels = findMatchingPhoneModels(search);
+
+			whereConditions.OR = [
+				{ name: { contains: search, mode: "insensitive" } },
+				...(categories.length ? [{ category: { in: categories } }] : []),
+				...(phoneModels.length ? [{ phoneModel: { in: phoneModels } }] : []),
+			];
+		}
+
+		if (category && !search) {
+			whereConditions.category = category.toUpperCase();
+		}
+
+		if (phoneModel && !search) {
+			whereConditions.phoneModel = phoneModel.toUpperCase();
+		}
+
+		let orderBy: any = { [sortBy]: order };
+
+		if (sortBy === "reviews") {
+			orderBy = { createdAt: order };
+		}
 
 		const products = await prisma.product.findMany({
-			where: {
-				name: {
-					contains: search,
-					mode: "insensitive",
-				},
-			},
+			where: whereConditions,
 			include: {
 				variants: true,
 				reviews: true,
 			},
 			skip,
 			take: limit,
-			orderBy: { [sortBy]: order },
+			orderBy,
 		});
 
 		const total = await prisma.product.count({
-			where: { name: { contains: search, mode: "insensitive" } },
+			where: whereConditions,
 		});
 
 		res.status(200).json({
@@ -73,6 +132,9 @@ export const createProduct = async (req: Request, res: Response) => {
 				description: parsed.data.description,
 				price: parsed.data.price,
 				discount: parsed.data.discount,
+				availableModel: parsed.data.availableModel,
+				tag: parsed.data.tag,
+				category: parsed.data.category,
 				variants: {
 					createMany: {
 						data: parsed.data.variants.map((variant) => {
@@ -80,6 +142,7 @@ export const createProduct = async (req: Request, res: Response) => {
 								color: variant.color,
 								image: variant.image,
 								stock: variant.stock,
+								phoneModel: variant.phoneModel,
 								sku: generateSKU(),
 							};
 						}),
@@ -154,7 +217,7 @@ export const getProductById = async (req: Request, res: Response) => {
 		if (user && user.id) {
 			const wishlistedVariant = await prisma.wishlist.findFirst({
 				where: {
-					userId: req.user.id,
+					userId: user.id,
 					productId: product.id,
 				},
 				select: { id: true },

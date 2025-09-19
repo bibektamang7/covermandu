@@ -31,6 +31,7 @@ app.listen(port, () => {
 	console.log("Server is running on port", port);
 });
 
+
 // import { prisma } from "db";
 // const email = process.env.ADMIN_EMAIL!;
 // const googleId = `google-jdk7ihoj`;
