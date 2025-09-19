@@ -3,20 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/apiClient";
 
 export const useProductsQuery = (params?: {
-  search?: string;
-  category?: string | null;
-  phoneModel?: string | null;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  order?: "asc" | "desc";
+	search?: string;
+	category?: string;
+	phoneModel?: string;
+	page?: number;
+	limit?: number;
+	sortBy?: string;
+	order?: "asc" | "desc";
 }) => {
-  return useQuery({
-    queryKey: ["products", params],
-    queryFn: () => getProducts(params),
-  });
+	return useQuery({
+		queryKey: ["products", params],
+		queryFn: () => getProducts(params),
+	});
 };
-
 
 export const useGetUserDetails = () => {};
 

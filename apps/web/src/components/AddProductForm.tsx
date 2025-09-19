@@ -10,29 +10,27 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Upload, X, Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { categories, phoneModels, availableModels } from "@/lib/constants";
+import { ProductVariantItem } from "@/components/ProductVariantItem";
+import { BasicInfoSection } from "@/components/BasicInfoSection";
+import { productFormSchema, ProductVariant } from "@/lib/productValidation";
+import { formatZodErrors, FormErrors } from "@/lib/formErrors";
 
-interface ProductVariant {
-	color: string;
-	stock: number;
-	image: File | null;
+interface FormData {
+	name: string;
+	description: string;
+	price: number;
+	discount: number;
+	tag: string;
+	category: string;
+	phoneModel: string;
+	availableModel: string;
 }
 
 const AddProductForm = () => {
 	const { data } = useSession();
-	const [formData, setFormData] = useState({
+	const [formData, setFormData] = useState<FormData>({
 		name: "",
 		description: "",
 		price: 800,
@@ -46,6 +44,8 @@ const AddProductForm = () => {
 	const [variants, setVariants] = useState<ProductVariant[]>([
 		{ color: "", stock: 0, image: null },
 	]);
+
+	const [errors, setErrors] = useState<FormErrors>({});
 
 	const createProduct = useMutation({
 		mutationFn: async (payload: any) => {
@@ -72,15 +72,29 @@ const AddProductForm = () => {
 				availableModel: "",
 			});
 			setVariants([{ color: "", stock: 0, image: null }]);
+			setErrors({});
 		},
-		onError: (err) => {
+		onError: (err: any) => {
 			console.error("Error creating product:", err);
-			alert("Failed to create product. Please try again.");
+			if (err.response?.data?.message) {
+				alert(`Failed to create product: ${err.response.data.message}`);
+			} else {
+				alert("Failed to create product. Please try again.");
+			}
 		},
 	});
 
-	const handleInputChange = (field: string, value: string) => {
+	const handleInputChange = (field: string, value: string | number) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
+
+		// Clear error for this field when user starts typing
+		if (errors[field]) {
+			setErrors((prev) => {
+				const newErrors = { ...prev };
+				delete newErrors[field];
+				return newErrors;
+			});
+		}
 	};
 
 	const handleVariantChange = (
@@ -93,6 +107,16 @@ const AddProductForm = () => {
 				i === index ? { ...variant, [field]: value } : variant
 			)
 		);
+
+		// Clear errors for this variant when user starts typing
+		const errorPath = `variants.${index}.${field}`;
+		if (errors[errorPath]) {
+			setErrors((prev) => {
+				const newErrors = { ...prev };
+				delete newErrors[errorPath];
+				return newErrors;
+			});
+		}
 	};
 
 	const addVariant = () => {
@@ -102,73 +126,106 @@ const AddProductForm = () => {
 	const removeVariant = (index: number) => {
 		if (variants.length > 1) {
 			setVariants((prev) => prev.filter((_, i) => i !== index));
+
+			// Remove errors for this variant
+			setErrors((prev) => {
+				const newErrors = { ...prev };
+				const errorKeys = Object.keys(newErrors);
+				errorKeys.forEach((key) => {
+					if (key.startsWith(`variants.${index}`)) {
+						delete newErrors[key];
+					}
+				});
+				return newErrors;
+			});
 		}
 	};
 
-	const handleImageUpload = (
-		index: number,
-		e: React.ChangeEvent<HTMLInputElement>
-	) => {
-		const file = e.target.files?.[0] || null;
-		handleVariantChange(index, "image", file);
-	};
-
 	const uploadToImageKit = async (file: File) => {
-		const { data: auth } = await axios.get(
-			`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/users/upload`,
-			{
-				headers: {
-					Authorization: `Bearer ${data?.user?.token}`,
-				},
-			}
-		);
+		try {
+			const { data: auth } = await axios.get(
+				`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/users/upload`,
+				{
+					headers: {
+						Authorization: `Bearer ${data?.user?.token}`,
+					},
+				}
+			);
 
-		const formData = new FormData();
-		formData.append("file", file);
-		formData.append("fileName", file.name);
-		formData.append("publicKey", auth.publicKey);
-		formData.append("signature", auth.signature);
-		formData.append("expire", auth.expire);
-		formData.append("token", auth.token);
-		formData.append("folder", "covermandu");
+			const formData = new FormData();
+			formData.append("file", file);
+			formData.append("fileName", file.name);
+			formData.append("publicKey", auth.publicKey);
+			formData.append("signature", auth.signature);
+			formData.append("expire", auth.expire);
+			formData.append("token", auth.token);
+			formData.append("folder", "covermandu");
 
-		const uploadRes = await axios.post(
-			"https://upload.imagekit.io/api/v1/files/upload",
-			formData,
-			{
-				headers: { "Content-Type": "multipart/form-data" },
-			}
-		);
+			const uploadRes = await axios.post(
+				"https://upload.imagekit.io/api/v1/files/upload",
+				formData,
+				{
+					headers: { "Content-Type": "multipart/form-data" },
+				}
+			);
 
-		return uploadRes.data.url as string;
+			return uploadRes.data.url as string;
+		} catch (error) {
+			console.error("Error uploading image:", error);
+			throw new Error("Failed to upload image");
+		}
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
+		// Validate form data
 		try {
+			const validatedData = productFormSchema.parse({
+				...formData,
+				variants,
+			});
+
+			// Clear previous errors
+			setErrors({});
+
+			// Prepare variants with uploaded images
 			const updatedVariants = await Promise.all(
-				variants.map(async (variant) => {
+				validatedData.variants.map(async (variant) => {
 					if (variant.image) {
-						const imageUrl = await uploadToImageKit(variant.image);
-						return { ...variant, image: imageUrl };
+						try {
+							const imageUrl = await uploadToImageKit(variant.image);
+							return { ...variant, image: imageUrl };
+						} catch (error) {
+							throw new Error(
+								`Failed to upload image for variant ${variant.color}`
+							);
+						}
 					}
 					return variant;
 				})
 			);
 
 			const payload = {
-				...formData,
-				price: Number(formData.price),
-				discount: formData.discount ? Number(formData.discount) : 0,
+				...validatedData,
+				price: Number(validatedData.price),
+				discount: validatedData.discount ? Number(validatedData.discount) : 0,
 				variants: updatedVariants,
 			};
-			console.log("this is palyload", payload);
 
 			await createProduct.mutateAsync(payload);
-		} catch (err) {
-			console.error("Error submitting product:", err);
-			alert("Something went wrong while uploading product.");
+		} catch (err: any) {
+			if (err.name === "ZodError") {
+				// Handle validation errors
+				const formattedErrors = formatZodErrors(err);
+				setErrors(formattedErrors);
+				console.error("Validation errors:", formattedErrors);
+				alert("Please check the form for errors and try again.");
+			} else {
+				// Handle other errors
+				console.error("Error submitting product:", err);
+				alert(err.message || "Something went wrong while uploading product.");
+			}
 		}
 	};
 
@@ -186,142 +243,18 @@ const AddProductForm = () => {
 				onSubmit={handleSubmit}
 				className="space-y-6"
 			>
-				<div className="grid lg:grid-cols-2 lg:gap-8">
-					<Card>
-						<CardHeader>
-							<CardTitle className="text-lg">Basic Information</CardTitle>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div className="space-y-2">
-								<Label htmlFor="name">Product Name *</Label>
-								<Input
-									id="name"
-									value={formData.name}
-									onChange={(e) => handleInputChange("name", e.target.value)}
-									placeholder="iPhone 15 Pro Max Case"
-									required
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="description">Description *</Label>
-								<Textarea
-									id="description"
-									value={formData.description}
-									onChange={(e) =>
-										handleInputChange("description", e.target.value)
-									}
-									placeholder="Describe your product..."
-									rows={4}
-									required
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="tag">Product Tag *</Label>
-								<Select
-									value={formData.tag}
-									onValueChange={(value) => handleInputChange("tag", value)}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Select tag" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="NEW">New</SelectItem>
-										<SelectItem value="TRENDING">Trending</SelectItem>
-										<SelectItem value="MOST_LIKED">Most Liked</SelectItem>
-										<SelectItem value="POPULAR">Popular</SelectItem>
-										<SelectItem value="PREMIUM">Premium</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-						</CardContent>
-					</Card>
-
-					<Card>
-						<CardHeader>
-							<CardTitle className="text-lg">Pricing</CardTitle>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div className="space-y-2">
-									<Label htmlFor="price">Price (Rs.) *</Label>
-									<Input
-										id="price"
-										type="number"
-										step="0.01"
-										value={formData.price}
-										onChange={(e) => handleInputChange("price", e.target.value)}
-										placeholder="2999.00"
-										required
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="discount">Discount (%)</Label>
-									<Input
-										id="discount"
-										type="number"
-										min="0"
-										max="100"
-										value={formData.discount}
-										onChange={(e) =>
-											handleInputChange("discount", e.target.value)
-										}
-										placeholder="10"
-									/>
-								</div>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="category">Category *</Label>
-								<Select
-									value={formData.category}
-									onValueChange={(value) =>
-										handleInputChange("category", value)
-									}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Select category" />
-									</SelectTrigger>
-									<SelectContent>
-										{categories.map((categoryValue) => (
-											<SelectItem
-												key={categoryValue}
-												value={categoryValue}
-											>
-												{categoryValue.replaceAll("_", " ")}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="availableModel">Available Model *</Label>
-								<Select
-									value={formData.availableModel}
-									onValueChange={(value) =>
-										handleInputChange("availableModel", value)
-									}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Select available model" />
-									</SelectTrigger>
-									<SelectContent>
-										{availableModels.map((availableModel) => (
-											<SelectItem
-												key={availableModel}
-												value={availableModel}
-											>
-												{availableModel.replaceAll("_", " ")}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-						</CardContent>
-					</Card>
-				</div>
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-lg">Basic Information</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<BasicInfoSection
+							formData={formData}
+							onInputChange={handleInputChange}
+							errors={errors}
+						/>
+					</CardContent>
+				</Card>
 
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between">
@@ -343,134 +276,20 @@ const AddProductForm = () => {
 					</CardHeader>
 					<CardContent className="space-y-6">
 						{variants.map((variant, index) => (
-							<div
+							<ProductVariantItem
 								key={index}
-								className="border rounded-lg p-4 space-y-4"
-							>
-								<div className="flex items-center justify-between">
-									<h4 className="font-medium">Variant {index + 1}</h4>
-									{variants.length > 1 && (
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={() => removeVariant(index)}
-											className="text-destructive hover:text-destructive"
-										>
-											<X className="w-4 h-4" />
-										</Button>
-									)}
-								</div>
-
-								<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-									<div className="space-y-2">
-										<Label htmlFor={`color-${index}`}>Color *</Label>
-										<Input
-											id={`color-${index}`}
-											value={variant.color}
-											onChange={(e) =>
-												handleVariantChange(index, "color", e.target.value)
-											}
-											placeholder="e.g., Blue, Red, Black"
-											required
-										/>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor={`stock-${index}`}>Stock *</Label>
-										<Input
-											id={`stock-${index}`}
-											type="number"
-											value={variant.stock}
-											onChange={(e) =>
-												handleVariantChange(
-													index,
-													"stock",
-													Number(e.target.value)
-												)
-											}
-											placeholder="50"
-											required
-										/>
-									</div>
-
-									<div className="space-y-2">
-										<Label htmlFor="model">Model *</Label>
-										<Select
-											value={formData.phoneModel}
-											onValueChange={(value) =>
-												handleInputChange("phoneModel", value)
-											}
-										>
-											<SelectTrigger>
-												<SelectValue placeholder="Select model" />
-											</SelectTrigger>
-											<SelectContent>
-												{phoneModels.map((modelValue) => (
-													<SelectItem
-														key={modelValue}
-														value={modelValue}
-													>
-														{modelValue.replaceAll("_", " ")}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor={`image-${index}`}>Variant Image</Label>
-									<div className="flex items-center gap-4">
-										<div className="flex-1">
-											<div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
-												<div className="text-center">
-													<Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-													<div className="mt-2">
-														<Label
-															htmlFor={`image-${index}`}
-															className="cursor-pointer"
-														>
-															<span className="text-sm font-medium text-foreground">
-																Click to upload image for{" "}
-																{variant.color || `Variant ${index + 1}`}
-															</span>
-														</Label>
-														<Input
-															id={`image-${index}`}
-															type="file"
-															accept="image/*"
-															onChange={(e) => handleImageUpload(index, e)}
-															className="hidden"
-														/>
-													</div>
-												</div>
-											</div>
-										</div>
-
-										{variant.image && (
-											<div className="relative">
-												<img
-													src={URL.createObjectURL(variant.image)}
-													alt={`${variant.color} variant`}
-													className="w-20 h-20 object-cover rounded-lg border"
-												/>
-												<Button
-													type="button"
-													variant="destructive"
-													size="sm"
-													className="absolute -top-2 -right-2 h-6 w-6 p-0"
-													onClick={() =>
-														handleVariantChange(index, "image", null)
-													}
-												>
-													<X className="h-3 w-3" />
-												</Button>
-											</div>
-										)}
-									</div>
-								</div>
-							</div>
+								variant={variant}
+								index={index}
+								onVariantChange={handleVariantChange}
+								onInputChange={handleInputChange}
+								onRemove={removeVariant}
+								errors={errors}
+								formData={formData}
+							/>
 						))}
+						{errors.variants && (
+							<p className="text-sm text-destructive">{errors.variants}</p>
+						)}
 					</CardContent>
 				</Card>
 

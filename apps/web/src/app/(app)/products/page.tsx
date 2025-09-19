@@ -18,8 +18,6 @@ import {
 	ShoppingCart,
 	Star,
 	Filter,
-	ChevronLeft,
-	ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { useProductsQuery } from "@/hooks/useProducts";
@@ -36,6 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import ReviewForm from "@/components/ReviewForm";
 import { categories, phoneModels } from "@/lib/constants";
+import { Pagination } from "@/components/Pagination";
 
 const filterOptions = [
 	{ value: "all", label: "All Products" },
@@ -66,8 +65,8 @@ const Products = () => {
 	const [openReviewDialog, setOpenReviewDialog] = useState(false);
 	const [selectedProductForReview, setSelectedProductForReview] =
 		useState<Product | null>(null);
-	const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-	const [selectedModel, setSelectedModel] = useState<string | null>(null);
+	const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+	const [selectedModel, setSelectedModel] = useState<string | undefined>(undefined);
 	const productsPerPage = 12;
 	const { addToCart } = useCart();
 
@@ -123,8 +122,8 @@ const Products = () => {
 
 	const clearFilters = () => {
 		setSelectedFilter("all");
-		setSelectedCategory(null);
-		setSelectedModel(null);
+		setSelectedCategory(undefined);
+		setSelectedModel(undefined);
 	};
 
 	if (isLoading) {
@@ -215,7 +214,7 @@ const Products = () => {
 											<Filter className="w-3 h-3" />
 											Category: {selectedCategory.replaceAll("_", " ")}
 											<button
-												onClick={() => setSelectedCategory(null)}
+												onClick={() => setSelectedCategory(undefined)}
 												className="ml-1 hover:text-destructive transition-colors"
 											>
 												×
@@ -230,7 +229,7 @@ const Products = () => {
 											<Filter className="w-3 h-3" />
 											Model: {selectedModel.replaceAll("_", " ")}
 											<button
-												onClick={() => setSelectedModel(null)}
+												onClick={() => setSelectedModel(undefined)}
 												className="ml-1 hover:text-destructive transition-colors"
 											>
 												×
@@ -268,14 +267,14 @@ const Products = () => {
 													key={category}
 													className="flex items-center"
 												>
-													<input
-														type="radio"
-														id={`category-${category}`}
-														name="category"
-														checked={selectedCategory === category}
-														onChange={() => setSelectedCategory(category)}
-														className="mr-2"
-													/>
+																								<input
+												type="radio"
+												id={`category-${category}`}
+												name="category"
+												checked={selectedCategory === category}
+												onChange={() => setSelectedCategory(category)}
+												className="mr-2"
+											/>
 													<label
 														htmlFor={`category-${category}`}
 														className="text-sm cursor-pointer"
@@ -284,22 +283,20 @@ const Products = () => {
 													</label>
 												</div>
 											))}
-											<div className="flex items-center">
-												<input
-													type="radio"
-													id="category-all"
-													name="category"
-													checked={selectedCategory === null}
-													onChange={() => setSelectedCategory(null)}
-													className="mr-2"
-												/>
-												<label
-													htmlFor="category-all"
-													className="text-sm cursor-pointer"
-												>
-													All Categories
-												</label>
-											</div>
+											<input
+												type="radio"
+												id="category-all"
+												name="category"
+												checked={selectedCategory === undefined}
+												onChange={() => setSelectedCategory(undefined)}
+												className="mr-2"
+											/>
+											<label
+												htmlFor="category-all"
+												className="text-sm cursor-pointer"
+											>
+												All Categories
+											</label>
 										</div>
 									</div>
 
@@ -312,14 +309,14 @@ const Products = () => {
 													key={model}
 													className="flex items-center"
 												>
-													<input
-														type="radio"
-														id={`model-${model}`}
-														name="model"
-														checked={selectedModel === model}
-														onChange={() => setSelectedModel(model)}
-														className="mr-2"
-													/>
+																								<input
+												type="radio"
+												id={`model-${model}`}
+												name="model"
+												checked={selectedModel === model}
+												onChange={() => setSelectedModel(model)}
+												className="mr-2"
+											/>
 													<label
 														htmlFor={`model-${model}`}
 														className="text-sm cursor-pointer"
@@ -328,22 +325,20 @@ const Products = () => {
 													</label>
 												</div>
 											))}
-											<div className="flex items-center">
-												<input
-													type="radio"
-													id="model-all"
-													name="model"
-													checked={selectedModel === null}
-													onChange={() => setSelectedModel(null)}
-													className="mr-2"
-												/>
-												<label
-													htmlFor="model-all"
-													className="text-sm cursor-pointer"
-												>
-													All Models
-												</label>
-											</div>
+											<input
+												type="radio"
+												id="model-all"
+												name="model"
+												checked={selectedModel === undefined}
+												onChange={() => setSelectedModel(undefined)}
+												className="mr-2"
+											/>
+											<label
+												htmlFor="model-all"
+												className="text-sm cursor-pointer"
+											>
+												All Models
+											</label>
 										</div>
 									</div>
 								</Card>
@@ -537,35 +532,11 @@ const Products = () => {
 												}
 											)}
 										</div>
-										{totalPages > 1 && (
-											<div className="flex justify-center items-center gap-4 mt-12">
-												<Button
-													onClick={() =>
-														setCurrentPage((prev) => Math.max(prev - 1, 1))
-													}
-													disabled={currentPage === 1}
-													variant="outline"
-												>
-													<ChevronLeft className="w-4 h-4 mr-2" />
-													Previous
-												</Button>
-												<span className="text-sm font-medium text-muted-foreground">
-													Page {currentPage} of {totalPages}
-												</span>
-												<Button
-													onClick={() =>
-														setCurrentPage((prev) =>
-															Math.min(prev + 1, totalPages)
-														)
-													}
-													disabled={currentPage === totalPages}
-													variant="outline"
-												>
-													Next
-													<ChevronRight className="w-4 h-4 ml-2" />
-												</Button>
-											</div>
-										)}
+										<Pagination
+											currentPage={currentPage}
+											totalPages={totalPages}
+											onPageChange={setCurrentPage}
+										/>
 									</>
 								)}
 							</div>
