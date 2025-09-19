@@ -2,13 +2,20 @@ import { getProducts } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/apiClient";
 
-export const useProductsQuery = () => {
-	return useQuery({
-		queryKey: ["products"],
-		queryFn: getProducts,
-	});
+export const useProductsQuery = (params?: {
+  search?: string;
+  category?: string | null;
+  phoneModel?: string | null;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  order?: "asc" | "desc";
+}) => {
+  return useQuery({
+    queryKey: ["products", params],
+    queryFn: () => getProducts(params),
+  });
 };
-
 
 
 export const useGetUserDetails = () => {};

@@ -29,9 +29,11 @@ export const ProductShowcase = () => {
 
 				<div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
 					{data.products.slice(0, 4).map((product: Product, index: number) => (
-						<Link href={`/product/${product.id}`}>
+						<Link
+							href={`/product/${product.id}`}
+							key={product.id}
+						>
 							<Card
-								key={product.id}
 								className="product-card glow-on-hover"
 								style={{
 									animationDelay: `${index * 0.2}s`,

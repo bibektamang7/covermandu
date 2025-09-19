@@ -19,3 +19,5 @@ export const phoneModels = [
 	"IPHONE_14_PRO",
 	"IPHONE_14_PRO_MAX",
 ];
+
+export const availableModels = ["IPHONE_7_TO_IPHONE_15"];

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Upload, X, Plus, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { categories, phoneModels } from "@/lib/constants";
+import { categories, phoneModels, availableModels } from "@/lib/constants";
 
 interface ProductVariant {
 	color: string;
@@ -40,6 +40,7 @@ const AddProductForm = () => {
 		tag: "NEW",
 		category: "",
 		phoneModel: "",
+		availableModel: "",
 	});
 
 	const [variants, setVariants] = useState<ProductVariant[]>([
@@ -68,6 +69,7 @@ const AddProductForm = () => {
 				tag: "NEW",
 				category: "",
 				phoneModel: "",
+				availableModel: "",
 			});
 			setVariants([{ color: "", stock: 0, image: null }]);
 		},
@@ -172,9 +174,9 @@ const AddProductForm = () => {
 
 	return (
 		<section className="w-full">
-			<div>
-				<h2>Add New Product</h2>
-				<p>
+			<div className="py-4">
+				<h2 className="font-bold text-xl">Add New Product</h2>
+				<p className="font-light text-sm tracking py-1">
 					Create a new product for your store. Fill in all the required
 					information below.
 				</p>
@@ -293,24 +295,25 @@ const AddProductForm = () => {
 									</SelectContent>
 								</Select>
 							</div>
+
 							<div className="space-y-2">
-								<Label htmlFor="model">Model *</Label>
+								<Label htmlFor="availableModel">Available Model *</Label>
 								<Select
-									value={formData.phoneModel}
+									value={formData.availableModel}
 									onValueChange={(value) =>
-										handleInputChange("phoneModel", value)
+										handleInputChange("availableModel", value)
 									}
 								>
 									<SelectTrigger>
-										<SelectValue placeholder="Select model" />
+										<SelectValue placeholder="Select available model" />
 									</SelectTrigger>
 									<SelectContent>
-										{phoneModels.map((modelValue) => (
+										{availableModels.map((availableModel) => (
 											<SelectItem
-												key={modelValue}
-												value={modelValue}
+												key={availableModel}
+												value={availableModel}
 											>
-												{modelValue.replaceAll("_", " ")}
+												{availableModel.replaceAll("_", " ")}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -388,6 +391,30 @@ const AddProductForm = () => {
 											placeholder="50"
 											required
 										/>
+									</div>
+
+									<div className="space-y-2">
+										<Label htmlFor="model">Model *</Label>
+										<Select
+											value={formData.phoneModel}
+											onValueChange={(value) =>
+												handleInputChange("phoneModel", value)
+											}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select model" />
+											</SelectTrigger>
+											<SelectContent>
+												{phoneModels.map((modelValue) => (
+													<SelectItem
+														key={modelValue}
+														value={modelValue}
+													>
+														{modelValue.replaceAll("_", " ")}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
 									</div>
 								</div>
 

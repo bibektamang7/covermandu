@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Card} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
 	Select,
@@ -71,44 +71,28 @@ const Products = () => {
 	const productsPerPage = 12;
 	const { addToCart } = useCart();
 
-	const { data, isLoading, refetch } = useProductsQuery();
+	const { data, isLoading, refetch } = useProductsQuery({
+		category: selectedCategory,
+		phoneModel: selectedModel,
+		sortBy:
+			selectedSort === "price-low" || selectedSort === "price-high"
+				? "price"
+				: selectedSort === "rating"
+					? "reviews"
+					: "createdAt",
+		order: selectedSort === "price-low" ? "asc" : "desc",
+	});
 
 	useEffect(() => {
 		setCurrentPage(1);
 	}, [selectedFilter, selectedSort, selectedCategory, selectedModel]);
 
 	const filteredProducts =
-		data?.products
-			.filter((product: Product) => {
-				if (selectedFilter === "all") return true;
-				const tagKey = product.tag as unknown as keyof typeof Tag;
-				return tagKey === selectedFilter;
-			})
-			.filter((product: Product) => {
-				if (
-					selectedCategory &&
-					product.category.toString() !== selectedCategory
-				)
-					return false;
-				if (selectedModel && product.phoneModel.toString() !== selectedModel)
-					return false;
-				return true;
-			})
-			.sort((a: Product, b: Product) => {
-				switch (selectedSort) {
-					case "price-low":
-						return a.price - b.price;
-					case "price-high":
-						return b.price - a.price;
-					case "rating":
-						return getAverageRating(b.reviews) - getAverageRating(a.reviews);
-					case "newest":
-					default:
-						const dateA = new Date(a.createdAt || 0).getTime();
-						const dateB = new Date(b.createdAt || 0).getTime();
-						return dateB - dateA;
-				}
-			}) || [];
+		data?.products.filter((product: Product) => {
+			if (selectedFilter === "all") return true;
+			const tagKey = product.tag as unknown as keyof typeof Tag;
+			return tagKey === selectedFilter;
+		}) || [];
 
 	// Reset to first page if current page exceeds total pages
 	const totalPages = Math.ceil(

@@ -14,7 +14,9 @@ export default async function Home() {
 
 	await queryClient.prefetchQuery({
 		queryKey: ["products"],
-		queryFn: getProducts,
+		queryFn: async () => {
+			return await getProducts();
+		},
 	});
 
 	return (

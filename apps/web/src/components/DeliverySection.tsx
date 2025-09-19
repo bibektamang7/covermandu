@@ -10,8 +10,8 @@ const features = [
 	},
 	{
 		icon: Clock,
-		title: "2-5 Days Delivery",
-		description: "Fast and reliable delivery timeline",
+		title: "1-3 Days Delivery",
+		description: "Fast and reliable delivery timeline, all Nepal home delivery",
 	},
 	{
 		icon: Shield,
@@ -20,8 +20,8 @@ const features = [
 	},
 	{
 		icon: Truck,
-		title: "Free Shipping",
-		description: "Free delivery on orders above RS 1,000",
+		title: "10% OFF",
+		description: "On 2nd purchase for returning customers",
 	},
 ];
 
@@ -79,7 +79,7 @@ export const DeliverySection = () => {
 						{/* Stats */}
 						<div className="grid grid-cols-3 gap-8 pt-6 border-t border-border/50">
 							<div className="text-center">
-								<div className="text-3xl font-bold text-primary">2-5</div>
+								<div className="text-3xl font-bold text-primary">1-3</div>
 								<div className="text-sm text-muted-foreground">
 									Days Delivery
 								</div>
@@ -138,8 +138,8 @@ export const DeliverySection = () => {
 												key={index}
 												x1={city.x}
 												y1={city.y}
-												x2={nextCity.x}
-												y2={nextCity.y}
+												x2={nextCity?.x}
+												y2={nextCity?.y}
 												stroke="var(--primary)"
 												strokeWidth="0.5"
 												strokeOpacity="0.3"
