@@ -112,3 +112,101 @@ export const getSignedUrl = async (req: Request, res: Response) => {
 export const getUser = (req: Request, res: Response) => {
 	res.status(200).json({ user: req.user });
 };
+
+export const getAllUsers = async (req: Request, res: Response) => {
+	try {
+		const users = await prisma.user.findMany({
+			select: {
+				id: true,
+				name: true,
+				email: true,
+				role: true,
+				createdAt: true,
+				image: true,
+			},
+			orderBy: {
+				createdAt: "desc",
+			},
+		});
+		
+		res.status(200).json({ users });
+	} catch (error) {
+		console.error("Failed to fetch users", error);
+		res.status(500).json({ message: "Internal server error" });
+	}
+};
+
+export const getUserDashboard = async (req: Request, res: Response) => {
+	try {
+		const userId = req.user.id;
+		
+		// Get user data
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: {
+				id: true,
+				name: true,
+				email: true,
+				image: true,
+				createdAt: true,
+			},
+		});
+		
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+		
+		// Get cart items count
+		const cartItemsCount = await prisma.cart.count({
+			where: { userId: userId },
+		});
+		
+		// Get wishlist items count
+		const wishlistItemsCount = await prisma.wishlist.count({
+			where: { userId: userId },
+		});
+		
+		// Get user reviews count
+		const reviewsCount = await prisma.review.count({
+			where: { reviewerId: userId },
+		});
+		
+		// Get recent cart items (as orders)
+		const recentOrders = await prisma.cart.findMany({
+			where: { userId: userId },
+			include: {
+				productVariant: {
+					include: {
+						Product: true,
+					},
+				},
+			},
+			orderBy: {
+				createdAt: "desc",
+			},
+			take: 3,
+		});
+		
+		// Format the data for the frontend
+		const dashboardData = {
+			user,
+			stats: {
+				totalOrders: cartItemsCount,
+				wishlistItems: wishlistItemsCount,
+				totalReviews: reviewsCount,
+			},
+			recentOrders: recentOrders.map(order => ({
+				id: order.id,
+				date: order.createdAt,
+				status: "Processing", // In a real app, this would come from order status
+				total: order.productVariant.Product.price.toNumber() * order.quantity,
+				items: `${order.productVariant.Product.name} (x${order.quantity})`,
+			})),
+		};
+		
+		res.status(200).json(dashboardData);
+	} catch (error) {
+		console.error("Failed to fetch dashboard data", error);
+		res.status(500).json({ message: "Internal server error" });
+	}
+};
