@@ -20,53 +20,39 @@ import {
 	Calendar,
 } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
+import { useUserDashboard } from "@/lib/hooks/useUserDashboard";
 
 const Dashboard = () => {
-	const userStats = [
+	const { data, isLoading, isError } = useUserDashboard();
+
+	const userStats = data?.stats ? [
 		{
 			title: "Total Orders",
-			value: "12",
+			value: data.stats.totalOrders.toString(),
 			icon: ShoppingBag,
 			color: "text-blue-600",
 		},
 		{
 			title: "Active Orders",
-			value: "3",
+			value: "0", // We don't have this data yet
 			icon: Package,
 			color: "text-orange-600",
 		},
-		{ title: "Wishlist Items", value: "8", icon: Heart, color: "text-red-600" },
+		{ 
+			title: "Wishlist Items", 
+			value: data.stats.wishlistItems.toString(), 
+			icon: Heart, 
+			color: "text-red-600" 
+		},
 		{
 			title: "Total Reviews",
-			value: "2,450",
+			value: data.stats.totalReviews.toString(),
 			icon: Star,
 			color: "text-yellow-600",
 		},
-	];
+	] : [];
 
-	const recentOrders = [
-		{
-			id: "#ORD-2024-001",
-			date: "Jan 15, 2024",
-			status: "Delivered",
-			total: "Rs. 3,999",
-			items: "iPhone 15 Pro Case + Screen Protector",
-		},
-		{
-			id: "#ORD-2024-002",
-			date: "Jan 10, 2024",
-			status: "Shipped",
-			total: "Rs. 1,299",
-			items: "Wireless Charger",
-		},
-		{
-			id: "#ORD-2024-003",
-			date: "Jan 5, 2024",
-			status: "Processing",
-			total: "Rs. 2,199",
-			items: "Phone Stand + Cable Organizer",
-		},
-	];
+	const recentOrders = data?.recentOrders || [];
 
 	const getStatusColor = (status: string) => {
 		switch (status.toLowerCase()) {
@@ -81,16 +67,58 @@ const Dashboard = () => {
 		}
 	};
 
+	if (isLoading) {
+		return (
+			<div className="min-h-screen bg-muted/30">
+				<Navigation />
+				<main className="pt-20 px-16">
+					<div className="mx-auto px-6 py-8">
+						<div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+							<div>
+								<h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+								<p className="text-muted-foreground">Loading your dashboard...</p>
+							</div>
+						</div>
+						<div className="flex justify-center items-center h-64">
+							<p>Loading dashboard data...</p>
+						</div>
+					</div>
+				</main>
+			</div>
+		);
+	}
+
+	if (isError) {
+		return (
+			<div className="min-h-screen bg-muted/30">
+				<Navigation />
+				<main className="pt-20 px-16">
+					<div className="mx-auto px-6 py-8">
+						<div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+							<div>
+								<h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+								<p className="text-muted-foreground">Error loading dashboard</p>
+							</div>
+						</div>
+						<div className="flex justify-center items-center h-64">
+							<p>Error loading dashboard data. Please try again later.</p>
+						</div>
+					</div>
+				</main>
+			</div>
+		);
+	}
+
 	return (
 		<div className="min-h-screen bg-muted/30">
 			<Navigation />
 			<main className="pt-20 px-16">
-				<div className="  mx-auto px-6 py-8">
+				<div className="mx-auto px-6 py-8">
 					{/* Header */}
 					<div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
 						<div>
 							<h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-							<p className="text-muted-foreground">Welcome back, Rajesh!</p>
+							<p className="text-muted-foreground">Welcome back, {data?.user?.name || "User"}!</p>
 						</div>
 					</div>
 
@@ -100,17 +128,22 @@ const Dashboard = () => {
 							<CardHeader className="text-center">
 								<Avatar className="w-20 h-20 mx-auto mb-4">
 									<AvatarImage
-										src=""
-										alt="User"
+										src={data?.user?.image || ""}
+										alt={data?.user?.name || "User"}
 									/>
-									<AvatarFallback>RS</AvatarFallback>
+									<AvatarFallback>
+										{data?.user?.name
+											?.split(" ")
+											.map((n: string) => n[0])
+											.join("") || "U"}
+									</AvatarFallback>
 								</Avatar>
-								<CardTitle>Rajesh Sharma</CardTitle>
+								<CardTitle>{data?.user?.name || "User"}</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-4">
 								<div className="flex items-center gap-3 text-sm">
 									<Mail className="w-4 h-4 text-muted-foreground" />
-									<span>rajesh@example.com</span>
+									<span>{data?.user?.email || "user@example.com"}</span>
 								</div>
 								<div className="flex items-center gap-3 text-sm">
 									<Phone className="w-4 h-4 text-muted-foreground" />
@@ -122,7 +155,12 @@ const Dashboard = () => {
 								</div>
 								<div className="flex items-center gap-3 text-sm">
 									<Calendar className="w-4 h-4 text-muted-foreground" />
-									<span>Member since 2023</span>
+									<span>
+										Member since{" "}
+										{data?.user?.createdAt
+											? new Date(data.user.createdAt).toLocaleDateString()
+											: "Unknown"}
+									</span>
 								</div>
 								<Separator />
 								<Button
@@ -155,45 +193,48 @@ const Dashboard = () => {
 							))}
 						</div>
 
-						{/* Quick Actions */}
+						{/* Recent Orders */}
 						<Card className="lg:col-span-3">
 							<CardHeader>
-								<CardTitle>Quick Actions</CardTitle>
-								<CardDescription>
-									Manage your account and orders
-								</CardDescription>
+								<CardTitle>Recent Orders</CardTitle>
+								<CardDescription>Your recent orders</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-									<Button
-										variant="outline"
-										className="h-auto p-4 flex flex-col items-center gap-2"
-									>
-										<Package className="w-6 h-6" />
-										<span>Track Orders</span>
-									</Button>
-									<Button
-										variant="outline"
-										className="h-auto p-4 flex flex-col items-center gap-2"
-									>
-										<Heart className="w-6 h-6" />
-										<span>Wishlist</span>
-									</Button>
-									<Button
-										variant="outline"
-										className="h-auto p-4 flex flex-col items-center gap-2"
-									>
-										<MapPin className="w-6 h-6" />
-										<span>Addresses</span>
-									</Button>
-									<Button
-										variant="outline"
-										className="h-auto p-4 flex flex-col items-center gap-2"
-									>
-										<Star className="w-6 h-6" />
-										<span>Reviews</span>
-									</Button>
-								</div>
+								{recentOrders.length > 0 ? (
+									<div className="space-y-4">
+										{recentOrders.map((order: any) => (
+											<div
+												key={order.id}
+												className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg"
+											>
+												<div>
+													<p className="font-medium">{order.id}</p>
+													<p className="text-sm text-muted-foreground">
+														{order.items}
+													</p>
+												</div>
+												<div className="flex items-center gap-4 mt-2 sm:mt-0">
+													<Badge
+														className={getStatusColor(order.status)}
+														variant="secondary"
+													>
+														{order.status}
+													</Badge>
+													<div className="text-right">
+														<p className="font-medium">Rs. {order.total.toFixed(2)}</p>
+														<p className="text-sm text-muted-foreground">
+															{new Date(order.date).toLocaleDateString()}
+														</p>
+													</div>
+												</div>
+											</div>
+										))}
+									</div>
+								) : (
+									<p className="text-muted-foreground text-center py-4">
+										No recent orders found
+									</p>
+								)}
 							</CardContent>
 						</Card>
 					</div>

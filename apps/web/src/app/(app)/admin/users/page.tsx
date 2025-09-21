@@ -17,47 +17,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Eye, Edit, Trash2, UserPlus } from "lucide-react";
+import { useUsers } from "@/lib/hooks/useUsers";
 
 const UsersManagement = () => {
-	// Mock user data
-	const users = [
-		{
-			id: 1,
-			name: "John Doe",
-			email: "john@example.com",
-			role: "Customer",
-			status: "Active",
-			joinDate: "2024-01-15",
-			avatar: "/placeholder.svg",
-		},
-		{
-			id: 2,
-			name: "Jane Smith",
-			email: "jane@example.com",
-			role: "Admin",
-			status: "Active",
-			joinDate: "2024-02-20",
-			avatar: "/placeholder.svg",
-		},
-		{
-			id: 3,
-			name: "Mike Johnson",
-			email: "mike@example.com",
-			role: "Customer",
-			status: "Inactive",
-			joinDate: "2024-03-10",
-			avatar: "/placeholder.svg",
-		},
-		{
-			id: 4,
-			name: "Sarah Wilson",
-			email: "sarah@example.com",
-			role: "Customer",
-			status: "Active",
-			joinDate: "2024-03-25",
-			avatar: "/placeholder.svg",
-		},
-	];
+	const { data: users, isLoading, isError } = useUsers();
 
 	const getStatusColor = (status: string) => {
 		switch (status.toLowerCase()) {
@@ -81,6 +44,46 @@ const UsersManagement = () => {
 		}
 	};
 
+	if (isLoading) {
+		return (
+			<div className="space-y-6">
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between">
+						<div>
+							<CardTitle>All Users</CardTitle>
+							<CardDescription>View and manage user accounts</CardDescription>
+						</div>
+					</CardHeader>
+					<CardContent>
+						<div className="flex justify-center items-center h-32">
+							<p>Loading users...</p>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
+
+	if (isError) {
+		return (
+			<div className="space-y-6">
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between">
+						<div>
+							<CardTitle>All Users</CardTitle>
+							<CardDescription>View and manage user accounts</CardDescription>
+						</div>
+					</CardHeader>
+					<CardContent>
+						<div className="flex justify-center items-center h-32">
+							<p>Error loading users. Please try again later.</p>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
+
 	return (
 		<div className="space-y-6">
 			<Card>
@@ -103,19 +106,19 @@ const UsersManagement = () => {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{users.map((user) => (
+							{users && users.map((user: any) => (
 								<TableRow key={user.id}>
 									<TableCell>
 										<div className="flex items-center gap-3">
 											<Avatar className="h-8 w-8">
 												<AvatarImage
-													src={user.avatar}
+													src={user.image || "/placeholder.svg"}
 													alt={user.name}
 												/>
 												<AvatarFallback>
 													{user.name
 														.split(" ")
-														.map((n) => n[0])
+														.map((n: string) => n[0])
 														.join("")}
 												</AvatarFallback>
 											</Avatar>
@@ -133,13 +136,15 @@ const UsersManagement = () => {
 									</TableCell>
 									<TableCell>
 										<Badge
-											className={getStatusColor(user.status)}
+											className={getStatusColor("active")}
 											variant="secondary"
 										>
-											{user.status}
+											Active
 										</Badge>
 									</TableCell>
-									<TableCell>{user.joinDate}</TableCell>
+									<TableCell>
+										{new Date(user.createdAt).toLocaleDateString()}
+									</TableCell>
 									<TableCell className="text-right">
 										<div className="flex gap-2 justify-end">
 											<Button

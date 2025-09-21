@@ -22,3 +22,13 @@ export async function getProducts(params?: {
   const { data } = await apiClient.get(`/products?${queryParams.toString()}`);
   return data;
 }
+
+export async function getAllUsers() {
+  const { data } = await apiClient.get("/users/all");
+  return data.users;
+}
+
+export async function getUserDashboard() {
+  const { data } = await apiClient.get("/users/dashboard");
+  return data;
+}
