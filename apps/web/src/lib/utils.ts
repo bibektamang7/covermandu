@@ -1,8 +1,9 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { Review } from "@/types/product";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+	return twMerge(clsx(inputs));
 }
 export async function retryApiCall<T>(
 	fn: () => Promise<T>,
@@ -85,3 +86,9 @@ export class CircuitBreaker {
 		}
 	}
 }
+
+export const getAverageRating = (reviews: Review[]) => {
+	if (!reviews || reviews.length === 0) return 0;
+	const total = reviews.reduce((acc, review) => acc + review.starts, 0);
+	return total / reviews.length;
+};

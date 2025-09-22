@@ -13,7 +13,7 @@ import { signIn } from "next-auth/react";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function Login() {
+const Login = () => {
 	const [isLogin, setIsLogin] = useState(true);
 	const router = useRouter();
 	const handleAuth = async () => {
@@ -124,4 +124,6 @@ export default function Login() {
 			</div>
 		</div>
 	);
-}
+};
+
+export default Login;
