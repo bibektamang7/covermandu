@@ -295,6 +295,26 @@ export const getRecommendedProducts = async (req: Request, res: Response) => {
 			}),
 		]);
 
+		const hasInteractions = cartItems.length > 0 || wishlistItems.length > 0 || pastReviews.length > 0;
+
+		if (!hasInteractions) {
+			const randomProducts = await prisma.product.findMany({
+				include: {
+					variants: true,
+					reviews: true,
+				},
+				orderBy: { createdAt: 'desc' }, 
+				take: 12,
+			});
+
+			res.status(200).json({
+				products: randomProducts,
+				total: randomProducts.length,
+				message: "Random products returned as no past interactions were found",
+			});
+			return;
+		}
+
 		const userCategories = new Set<Category>();
 		const userPhoneModels = new Set<PhoneModel>();
 		const interactionProductIds = new Set<string>();
