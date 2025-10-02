@@ -259,3 +259,106 @@ export const updateProduct = async (req: Request, res: Response) => {
 		res.status(500).json({ message: "Internal server error" });
 	}
 };
+
+export const getRecommendedProducts = async (req: Request, res: Response) => {
+	try {
+		const [cartItems, wishlistItems, pastReviews] = await Promise.all([
+			prisma.cart.findMany({
+				where: { userId: req.user.id },
+				include: {
+					productVariant: {
+						include: {
+							Product: true,
+						},
+					},
+				},
+			}),
+			prisma.wishlist.findMany({
+				where: { userId: req.user.id },
+				include: {
+					product: {
+						include: {
+							variants: true,
+						},
+					},
+				},
+			}),
+			prisma.review.findMany({
+				where: { reviewerId: req.user.id },
+				include: {
+					product: {
+						include: {
+							variants: true,
+						},
+					},
+				},
+			}),
+		]);
+
+		const userCategories = new Set<Category>();
+		const userPhoneModels = new Set<PhoneModel>();
+		const interactionProductIds = new Set<string>();
+
+		cartItems.forEach((item) => {
+			if (item.productVariant?.Product) {
+				userCategories.add(item.productVariant.Product.category);
+				userPhoneModels.add(item.productVariant.phoneModel);
+				interactionProductIds.add(item.productVariant.Product.id);
+			}
+		});
+
+		wishlistItems.forEach((item) => {
+			if (item.product) {
+				userCategories.add(item.product.category);
+				item.product.variants.forEach((variant) => {
+					userPhoneModels.add(variant.phoneModel);
+				});
+				interactionProductIds.add(item.productId);
+			}
+		});
+
+		pastReviews.forEach((review) => {
+			if (review.product) {
+				userCategories.add(review.product.category);
+				review.product.variants.forEach((variant) => {
+					userPhoneModels.add(variant.phoneModel);
+				});
+				interactionProductIds.add(review.productId);
+			}
+		});
+
+		// Generate recommendations based on user preferences
+		const recommendations = await prisma.product.findMany({
+			where: {
+				id: { notIn: Array.from(interactionProductIds) },
+				OR: [
+					{ category: { in: Array.from(userCategories) } },
+					{
+						variants: {
+							some: { phoneModel: { in: Array.from(userPhoneModels) } },
+						},
+					},
+				],
+			},
+			include: {
+				variants: true,
+				reviews: true,
+			},
+			orderBy: {
+				reviews: {
+					_count: "desc",
+				},
+			},
+			take: 12, 
+		});
+
+		res.status(200).json({
+			products: recommendations,
+			total: recommendations.length,
+			message: "Recommended products fetched successfully",
+		});
+	} catch (error) {
+		console.error("Failed to get recommended products", error);
+		res.status(500).json({ message: "Internal server error" });
+	}
+};

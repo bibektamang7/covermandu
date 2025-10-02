@@ -23,4 +23,6 @@ router
 	.delete(authenticateAdmin, deleteProduct)
 	.get(getProductById);
 
+router.route("/recommendedProducts" ).get(authenticateUser)
+
 export default router;
