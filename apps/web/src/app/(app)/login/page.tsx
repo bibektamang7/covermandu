@@ -26,17 +26,17 @@ const Login = () => {
 
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
-			<div className="h-screen flex flex-col items-start justify-center px-6">
+			<div className="relative h-screen flex flex-col items-start lg:justify-center px-6">
 				<div
 					onClick={() => {
 						router.back();
 					}}
-					className="lg:pl-20 flex items-center hover:cursor-pointer hover:text-primary "
+					className="lg:pl-20 flex items-center hover:cursor-pointer hover:text-primary absolute left-4 top-4"
 				>
 					<ChevronLeft />
 					<span className="font-bold">back</span>
 				</div>
-				<div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh] lg:w-[80%] lg:mx-auto">
+				<div className="grid lg:grid-cols-2 gap-12 items-center w-full min-h-[80vh] lg:w-[80%] lg:mx-auto">
 					<div className="flex items-center justify-center">
 						<Card className="w-full max-w-md shadow-2xl border-0 bg-card/50 backdrop-blur-sm">
 							<CardHeader className="space-y-1 text-center">

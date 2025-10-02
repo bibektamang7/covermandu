@@ -100,7 +100,9 @@ export function ProductVariantItem({
 					<Label htmlFor="phoneModel">Phone Model *</Label>
 					<Select
 						value={formData.phoneModel}
-						onValueChange={(value) => onInputChange("phoneModel", value)}
+						onValueChange={(value) =>
+							onVariantChange(index, "phoneModel", value)
+						}
 					>
 						<SelectTrigger>
 							<SelectValue placeholder="Select phone model" />

@@ -54,14 +54,14 @@ const testimonials = [
 
 export const TestimonialsSection = () => {
 	return (
-		<section className="py-20 px-16 bg-gradient-to-b from-background to-muted/20">
+		<section className="py-20 lg:px-16 bg-gradient-to-b from-background to-muted/20">
 			<div className="  mx-auto px-6">
 				{/* Section Header */}
 				<div className="text-center mb-16 space-y-4">
 					<h2 className="text-4xl lg:text-5xl font-bold text-balance">
 						What Our <span className="text-gradient">Customers Say</span>
 					</h2>
-					<p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+					<p className="lg:text-xl text-sm text-muted-foreground max-w-2xl mx-auto">
 						Join thousands of satisfied customers across Nepal who trust
 						Covermandu for their iPhone protection
 					</p>
@@ -72,12 +72,12 @@ export const TestimonialsSection = () => {
 							{[...Array(5)].map((_, i) => (
 								<Star
 									key={i}
-									className="w-6 h-6 fill-yellow-400 text-yellow-400"
+									className="md:w-6 md:h-6 h-4 w-4 fill-yellow-400 text-yellow-400"
 								/>
 							))}
 						</div>
-						<div className="text-2xl font-bold">4.9</div>
-						<div className="text-muted-foreground">from 1,247+ reviews</div>
+						<div className="md:text-2xl font-bold text-sm">4.9</div>
+						<div className="text-muted-foreground text-sm">from 1,247+ reviews</div>
 					</div>
 				</div>
 

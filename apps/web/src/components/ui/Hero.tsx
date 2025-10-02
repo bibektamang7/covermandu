@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export const Hero = () => {
 	return (
-		<section className="px-16 relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-secondary/30 to-accent/20">
+		<section className="lg:px-16 relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-secondary/30 to-accent/20">
 			<div className="absolute inset-0 overflow-hidden">
 				<div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full blur-3xl animate-pulse"></div>
 				<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-accent/20 to-primary/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
@@ -17,12 +17,12 @@ export const Hero = () => {
 							<div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full text-sm font-medium text-primary animate-[slideInFromLeft_0.8s_ease-out]">
 								🇳🇵 Made for Nepal
 							</div>
-							<h1 className="text-4xl lg:text-6xl font-bold text-balance animate-[slideInFromLeft_0.8s_ease-out_0.2s_both]">
+							<h1 className="text-4xl md:text-6xl font-bold text-balance animate-[slideInFromLeft_0.8s_ease-out_0.2s_both]">
 								Premium
 								<span className="text-gradient block">iPhone Cases</span>
 								for Nepal
 							</h1>
-							<p className="text-muted-foreground max-w-lg animate-[slideInFromLeft_0.8s_ease-out_0.4s_both]">
+							<p className="text-muted-foreground mx-auto max-w-lg animate-[slideInFromLeft_0.8s_ease-out_0.4s_both]">
 								Stylish protection delivered across all 77 districts of Nepal.
 								Premium quality, fast delivery, unbeatable style.
 							</p>
@@ -80,7 +80,7 @@ export const Hero = () => {
 								</div>
 							</div>
 
-							<div className="absolute -bottom-4 -left-4 bg-card rounded-xl p-4 shadow-lg border animate-[fadeInScale_1s_ease-out_1.4s_both]">
+							<div className="absolute -bottom-4 -left-4 bg-card rounded-xl md:p-4 p-2 shadow-lg border animate-[fadeInScale_1s_ease-out_1.4s_both]">
 								<div className="text-center">
 									<div className="text-xl font-bold text-primary">RS 699</div>
 									<div className="text-xs text-muted-foreground">

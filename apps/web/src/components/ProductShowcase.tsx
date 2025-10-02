@@ -16,13 +16,13 @@ export const ProductShowcase = () => {
 		return <>EFFOR..</>;
 	}
 	return (
-		<section className="py-20 px-16 bg-gradient-to-b from-background to-secondary/20">
-			<div className="  mx-auto px-6">
-				<div className="text-center mb-16 space-y-4">
+		<section className="py-20 lg:px-16 bg-gradient-to-b from-background to-secondary/20">
+			<div className="mx-auto lg:px-6">
+				<div className="text-center lg:mb-16 space-y-4">
 					<h2 className="text-4xl lg:text-5xl font-bold text-balance">
 						Our <span className="text-gradient">Premium Collection</span>
 					</h2>
-					<p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+					<p className="lg:text-xl text-sm text-muted-foreground max-w-2xl mx-auto">
 						Handpicked cases designed for style, protection, and your lifestyle
 					</p>
 				</div>

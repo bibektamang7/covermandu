@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -21,36 +22,64 @@ import {
 } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { useUserDashboard } from "@/lib/hooks/useUserDashboard";
+import { getSession, useSession } from "next-auth/react";
 
 const Dashboard = () => {
-	const { data, isLoading, isError } = useUserDashboard();
+	const session = useSession();
+	const { data, isLoading, isError } = useUserDashboard(
+		session.data?.user?.token!
+	);
 
-	const userStats = data?.stats ? [
-		{
-			title: "Total Orders",
-			value: data.stats.totalOrders.toString(),
-			icon: ShoppingBag,
-			color: "text-blue-600",
-		},
-		{
-			title: "Active Orders",
-			value: "0", // We don't have this data yet
-			icon: Package,
-			color: "text-orange-600",
-		},
-		{ 
-			title: "Wishlist Items", 
-			value: data.stats.wishlistItems.toString(), 
-			icon: Heart, 
-			color: "text-red-600" 
-		},
-		{
-			title: "Total Reviews",
-			value: data.stats.totalReviews.toString(),
-			icon: Star,
-			color: "text-yellow-600",
-		},
-	] : [];
+	if (isLoading) {
+		return (
+			<div className="min-h-screen bg-muted/30">
+				<main className="pt-20 px-16">
+					<div className="mx-auto px-6 py-8">
+						<div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+							<div>
+								<h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+								<p className="text-muted-foreground">
+									Loading your dashboard...
+								</p>
+							</div>
+						</div>
+						<div className="flex justify-center items-center h-64">
+							<p>Loading dashboard data...</p>
+						</div>
+					</div>
+				</main>
+			</div>
+		);
+	}
+
+	const userStats = data.stats
+		? [
+				{
+					title: "Total Orders",
+					value: data.stats.totalOrders.toString(),
+					icon: ShoppingBag,
+					color: "text-blue-600",
+				},
+				{
+					title: "Active Orders",
+					value: "0", // We don't have this data yet
+					icon: Package,
+					color: "text-orange-600",
+				},
+				{
+					title: "Wishlist Items",
+					value: data.stats.wishlistItems.toString(),
+					icon: Heart,
+					color: "text-red-600",
+				},
+				{
+					title: "Total Reviews",
+					value: data.stats.totalReviews.toString(),
+					icon: Star,
+					color: "text-yellow-600",
+				},
+			]
+		: [];
 
 	const recentOrders = data?.recentOrders || [];
 
@@ -66,27 +95,6 @@ const Dashboard = () => {
 				return "bg-gray-100 text-gray-800";
 		}
 	};
-
-	if (isLoading) {
-		return (
-			<div className="min-h-screen bg-muted/30">
-				<Navigation />
-				<main className="pt-20 px-16">
-					<div className="mx-auto px-6 py-8">
-						<div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-							<div>
-								<h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-								<p className="text-muted-foreground">Loading your dashboard...</p>
-							</div>
-						</div>
-						<div className="flex justify-center items-center h-64">
-							<p>Loading dashboard data...</p>
-						</div>
-					</div>
-				</main>
-			</div>
-		);
-	}
 
 	if (isError) {
 		return (
@@ -118,7 +126,9 @@ const Dashboard = () => {
 					<div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
 						<div>
 							<h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-							<p className="text-muted-foreground">Welcome back, {data?.user?.name || "User"}!</p>
+							<p className="text-muted-foreground">
+								Welcome back, {data?.user?.name || "User"}!
+							</p>
 						</div>
 					</div>
 
@@ -221,7 +231,9 @@ const Dashboard = () => {
 														{order.status}
 													</Badge>
 													<div className="text-right">
-														<p className="font-medium">Rs. {order.total.toFixed(2)}</p>
+														<p className="font-medium">
+															Rs. {order.total.toFixed(2)}
+														</p>
 														<p className="text-sm text-muted-foreground">
 															{new Date(order.date).toLocaleDateString()}
 														</p>

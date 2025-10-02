@@ -30,7 +30,7 @@ export const useAddProductForm = () => {
 	});
 
 	const [variants, setVariants] = useState<ProductVariant[]>([
-		{ color: "", stock: 0, image: null },
+		{ color: "", stock: 0, image: null, phoneModel: "" },
 	]);
 
 	const [errors, setErrors] = useState<FormErrors>({});
@@ -59,7 +59,7 @@ export const useAddProductForm = () => {
 				phoneModel: "",
 				availableModel: "",
 			});
-			setVariants([{ color: "", stock: 0, image: null }]);
+			setVariants([{ color: "", stock: 0, image: null, phoneModel: "" }]);
 			setErrors({});
 		},
 		onError: (err: any) => {
@@ -108,7 +108,10 @@ export const useAddProductForm = () => {
 	};
 
 	const addVariant = () => {
-		setVariants((prev) => [...prev, { color: "", stock: 0, image: null }]);
+		setVariants((prev) => [
+			...prev,
+			{ color: "", stock: 0, image: null, phoneModel: "" },
+		]);
 	};
 
 	const removeVariant = (index: number) => {
@@ -168,6 +171,7 @@ export const useAddProductForm = () => {
 		e.preventDefault();
 
 		// Validate form data
+			console.log(variants);
 		try {
 			const validatedData = productFormSchema.parse({
 				...formData,
@@ -183,7 +187,10 @@ export const useAddProductForm = () => {
 					if (variant.image) {
 						try {
 							const imageUrl = await uploadToImageKit(variant.image);
-							return { ...variant, image: imageUrl };
+							return {
+								...variant,
+								image: imageUrl,
+							};
 						} catch (error) {
 							throw new Error(
 								`Failed to upload image for variant ${variant.color}`

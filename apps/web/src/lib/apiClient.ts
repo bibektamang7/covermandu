@@ -1,4 +1,3 @@
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
 import axios from "axios";
 
 const baseURL =

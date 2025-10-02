@@ -33,3 +33,15 @@ export const useGetProduct = (productId: string, token?: string) => {
 		},
 	});
 };
+
+export const useGetRecommendedProducts = (token: string) => {
+	return useQuery({
+		queryKey: ["recommendedProducts"],
+		queryFn: async () => {
+			const response = await apiClient.get("/products/recommendedProducts", {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			return response.data;
+		},
+	});
+};

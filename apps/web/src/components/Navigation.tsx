@@ -26,15 +26,15 @@ export const Navigation = () => {
 
 	return (
 		<nav
-			className={`px-16 fixed top-0 w-full z-50 transition-all duration-300 ${
+			className={`md:px-16 fixed top-0 w-full z-50 transition-all duration-300 ${
 				isScrolled
 					? "bg-background/95 backdrop-blur-md border-b border-border/50"
 					: "bg-transparent"
 			}`}
 		>
-			<div className="  mx-auto px-6">
+			<div className="mx-auto md:px-6">
 				<div className="flex items-center justify-between h-16 lg:h-20">
-					<div className="flex items-center">
+					<div className="flex items-center pl-4 md:pl-0">
 						<Link
 							href="/"
 							className="text-2xl font-bold text-gradient"
@@ -95,16 +95,16 @@ export const Navigation = () => {
 							className="w-10 h-10 p-0 rounded-full relative"
 							asChild
 						>
-							<a href="/cart">
+							<Link href="/cart">
 								<ShoppingCart className="w-5 h-5" />
 								<span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
-									2
+									{getTotalItems()}
 								</span>
-							</a>
+							</Link>
 						</Button>
 						<Button
 							variant="ghost"
-							size="sm"
+							size="icon"
 							className="w-10 h-10 p-0"
 							onClick={() => setIsOpen(!isOpen)}
 						>
@@ -120,7 +120,7 @@ export const Navigation = () => {
 
 			{isOpen && (
 				<div className="lg:hidden bg-background/95 backdrop-blur-md border-b border-border/50">
-					<div className="  mx-auto px-6 py-4">
+					<div className="mx-auto px-6 py-4">
 						<div className="flex flex-col space-y-4">
 							<div className="flex gap-3 pt-4 border-t border-border/50">
 								<Button

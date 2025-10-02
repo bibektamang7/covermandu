@@ -36,15 +36,15 @@ const majorCities = [
 
 export const DeliverySection = () => {
 	return (
-		<section className="py-20 px-16 bg-gradient-to-br from-accent/10 via-background to-primary/5">
-			<div className="  mx-auto px-6">
+		<section className="py-20 lg:px-16 bg-gradient-to-br from-accent/10 via-background to-primary/5">
+			<div className="mx-auto lg:px-6 text-center">
 				<div className="grid lg:grid-cols-2 gap-12 items-center">
 					<div className="space-y-8">
 						<div className="space-y-4">
-							<h2 className="text-4xl lg:text-5xl font-bold text-balance">
+							<h2 className="text-4xl px-6 lg:text-5xl font-bold text-balance">
 								<span className="text-gradient">Nationwide</span> Delivery
 							</h2>
-							<p className="text-xl text-muted-foreground">
+							<p className="lg:text-xl text-sm text-muted-foreground">
 								From the mountains of Everest to the plains of Terai, we bring
 								premium iPhone protection to your doorstep.
 							</p>
@@ -79,17 +79,17 @@ export const DeliverySection = () => {
 						{/* Stats */}
 						<div className="grid grid-cols-3 gap-8 pt-6 border-t border-border/50">
 							<div className="text-center">
-								<div className="text-3xl font-bold text-primary">1-3</div>
+								<div className="md:text-3xl font-bold text-primary">1-3</div>
 								<div className="text-sm text-muted-foreground">
 									Days Delivery
 								</div>
 							</div>
 							<div className="text-center">
-								<div className="text-3xl font-bold text-primary">77</div>
+								<div className="md:text-3xl font-bold text-primary">77</div>
 								<div className="text-sm text-muted-foreground">Districts</div>
 							</div>
 							<div className="text-center">
-								<div className="text-3xl font-bold text-primary">99%</div>
+								<div className="md:text-3xl font-bold text-primary">99%</div>
 								<div className="text-sm text-muted-foreground">On Time</div>
 							</div>
 						</div>
@@ -154,7 +154,7 @@ export const DeliverySection = () => {
 						</div>
 
 						{/* Floating Delivery Card */}
-						<div className="absolute -bottom-6 -right-6 bg-card rounded-xl p-4 shadow-xl border animate-[fadeInScale_1s_ease-out_1s_both]">
+						<div className="absolute -bottom-6 lg:-right-6 right-0 bg-card rounded-xl p-4 shadow-xl border animate-[fadeInScale_1s_ease-out_1s_both]">
 							<div className="flex items-center gap-3">
 								<div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
 									<Truck className="w-5 h-5 text-green-600" />
