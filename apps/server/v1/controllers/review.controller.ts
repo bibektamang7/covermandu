@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "db";
 import { createReviewSchema } from "../validation/review.validation";
+import redis from "../utils/redis";
 
 export const createReview = async (req: Request, res: Response) => {
 	try {
@@ -17,6 +18,13 @@ export const createReview = async (req: Request, res: Response) => {
 			res.status(400).json({ message: "Failed to create review" });
 			return;
 		}
+		
+		// Invalidate reviews cache for this product and recommended products cache
+		await Promise.all([
+			redis.del(`reviews:${productId}:*`),
+			redis.del("recommended:*")
+		]);
+		
 		res.status(200).json({
 			message: "Review created successfully",
 			review,
@@ -43,12 +51,24 @@ export const getReviewsByProduct = async (req: Request, res: Response) => {
 		const limit = Number(req.query.limit) || 5;
 		const skip = (page - 1) * limit;
 
+		// Create cache key for reviews
+		const cacheKey = `reviews:${productId}:${page}:${limit}`;
+		
+		// Try to get cached reviews
+		const cachedReviews = await redis.get(cacheKey);
+		if (cachedReviews) {
+			return res.status(200).json(JSON.parse(cachedReviews));
+		}
+
 		const reviews = await prisma.review.findMany({
 			where: { productId },
 			include: { reviewer: true },
 			skip,
 			take: limit,
 		});
+
+		// Cache the reviews for 10 minutes (600 seconds)
+		await redis.setex(cacheKey, 600, JSON.stringify(reviews));
 
 		res.status(200).json(reviews);
 	} catch (error: any) {

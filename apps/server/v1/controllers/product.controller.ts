@@ -5,6 +5,8 @@ import {
 	updateProductSchema,
 } from "../validation/product.validation";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import redis from "../utils/redis";
 
 const categoryLabels: Record<Category, string> = {
 	[Category.SLIM_CASE]: "slim case",
@@ -40,6 +42,11 @@ function findMatchingPhoneModels(search: string): PhoneModel[] {
 		.map(([enumValue]) => enumValue as PhoneModel);
 }
 
+function generateCacheKey(params: Record<string, any>) {
+	const keyString = JSON.stringify(params);
+	return `products:${crypto.createHash("md5").update(keyString).digest("hex")}`;
+}
+
 export const getProducts = async (req: Request, res: Response) => {
 	try {
 		const page = Number(req.query.page) || 1;
@@ -53,9 +60,24 @@ export const getProducts = async (req: Request, res: Response) => {
 		const sortBy = (req.query.sortBy as string) || "createdAt";
 		const order = (req.query.order as "asc" | "desc") || "desc";
 
-		const whereConditions: any = {};
-		const normalizeSearch = search.toLowerCase().trim();
+		// Generate hashed cache key
+		const cacheKey = generateCacheKey({
+			page,
+			limit,
+			search,
+			category,
+			phoneModel,
+			sortBy,
+			order,
+		});
 
+		// Try to get cached data
+		const cachedData = await redis.get(cacheKey);
+		if (cachedData) {
+			return res.status(200).json(JSON.parse(cachedData));
+		}
+
+		const whereConditions: any = {};
 		if (search) {
 			const categories = findMatchingCategories(search);
 			const phoneModels = findMatchingPhoneModels(search);
@@ -65,14 +87,14 @@ export const getProducts = async (req: Request, res: Response) => {
 				...(categories.length ? [{ category: { in: categories } }] : []),
 				...(phoneModels.length ? [{ phoneModel: { in: phoneModels } }] : []),
 			];
-		}
+		} else {
+			if (category) {
+				whereConditions.category = category.toUpperCase();
+			}
 
-		if (category && !search) {
-			whereConditions.category = category.toUpperCase();
-		}
-
-		if (phoneModel && !search) {
-			whereConditions.phoneModel = phoneModel.toUpperCase();
+			if (phoneModel) {
+				whereConditions.phoneModel = phoneModel.toUpperCase();
+			}
 		}
 
 		let orderBy: any = { [sortBy]: order };
@@ -84,8 +106,9 @@ export const getProducts = async (req: Request, res: Response) => {
 		const products = await prisma.product.findMany({
 			where: whereConditions,
 			include: {
-				variants: true,
-				reviews: true,
+				_count: {
+					select: { reviews: true, variants: true },
+				},
 			},
 			skip,
 			take: limit,
@@ -96,12 +119,17 @@ export const getProducts = async (req: Request, res: Response) => {
 			where: whereConditions,
 		});
 
-		res.status(200).json({
+		const responseData = {
 			products,
 			page,
 			totalPages: Math.ceil(total / limit),
 			total,
-		});
+		};
+
+		// Cache the response for 10 minutes
+		await redis.set(cacheKey, JSON.stringify(responseData), "EX", 600);
+
+		res.status(200).json(responseData);
 	} catch (error) {
 		console.error("Failed to get products", error);
 		res.status(500).json({ message: "Internal server error" });
@@ -155,6 +183,10 @@ export const createProduct = async (req: Request, res: Response) => {
 			res.status(400).json({ message: "Failed to create product" });
 			return;
 		}
+
+		// Invalidate products cache when a new product is created
+		await Promise.all([redis.del("products:*"), redis.del("recommended:*")]);
+
 		res.status(200).json({ message: "Product created successfully" });
 	} catch (error) {
 		console.error("Failed to create product", error);
@@ -178,6 +210,14 @@ export const deleteProduct = async (req: Request, res: Response) => {
 			res.status(400).json({ message: "Failed to delete product" });
 			return;
 		}
+
+		// Invalidate product and products cache when a product is deleted
+		await Promise.all([
+			redis.del(`product:${productId}`),
+			redis.del("products:*"),
+			redis.del("recommended:*"),
+		]);
+
 		res.status(200).json({ message: "Product deleted" });
 	} catch (error) {
 		console.error("Failed to delete product", error);
@@ -202,6 +242,7 @@ export const getProductById = async (req: Request, res: Response) => {
 			res.status(400).json({ message: "Product ID is required" });
 			return;
 		}
+
 		const product = await prisma.product.findUnique({
 			where: { id: productId },
 			include: {
@@ -213,6 +254,7 @@ export const getProductById = async (req: Request, res: Response) => {
 			res.status(404).json({ message: "Product not found" });
 			return;
 		}
+
 		let isWishlisted = false;
 		if (user && user.id) {
 			const wishlistedVariant = await prisma.wishlist.findFirst({
@@ -253,6 +295,14 @@ export const updateProduct = async (req: Request, res: Response) => {
 			res.status(400).json({ message: "Failed to update product" });
 			return;
 		}
+
+		// Invalidate product and products cache when a product is updated
+		await Promise.all([
+			redis.del(`product:${productId}`),
+			redis.del("products:*"),
+			redis.del("recommended:*"),
+		]);
+
 		res.status(200).json({ message: "Product updated successfully" });
 	} catch (error) {
 		console.error("Failed to update product", error);
@@ -295,7 +345,10 @@ export const getRecommendedProducts = async (req: Request, res: Response) => {
 			}),
 		]);
 
-		const hasInteractions = cartItems.length > 0 || wishlistItems.length > 0 || pastReviews.length > 0;
+		const hasInteractions =
+			cartItems.length > 0 ||
+			wishlistItems.length > 0 ||
+			pastReviews.length > 0;
 
 		if (!hasInteractions) {
 			const randomProducts = await prisma.product.findMany({
@@ -303,15 +356,17 @@ export const getRecommendedProducts = async (req: Request, res: Response) => {
 					variants: true,
 					reviews: true,
 				},
-				orderBy: { createdAt: 'desc' }, 
+				orderBy: { createdAt: "desc" },
 				take: 12,
 			});
 
-			res.status(200).json({
+			const responseData = {
 				products: randomProducts,
 				total: randomProducts.length,
 				message: "Random products returned as no past interactions were found",
-			});
+			};
+
+			res.status(200).json(responseData);
 			return;
 		}
 
@@ -369,14 +424,16 @@ export const getRecommendedProducts = async (req: Request, res: Response) => {
 					_count: "desc",
 				},
 			},
-			take: 12, 
+			take: 12,
 		});
 
-		res.status(200).json({
+		const responseData = {
 			products: recommendations,
 			total: recommendations.length,
 			message: "Recommended products fetched successfully",
-		});
+		};
+
+		res.status(200).json(responseData);
 	} catch (error) {
 		console.error("Failed to get recommended products", error);
 		res.status(500).json({ message: "Internal server error" });
