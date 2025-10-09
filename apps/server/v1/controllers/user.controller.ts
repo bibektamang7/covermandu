@@ -7,6 +7,8 @@ import {
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { CustomError } from "../utils/CustomError";
+import * as Sentry from "@sentry/bun";
+import { captureError, withSentryTracing } from "../utils/sentryHelpers";
 
 export const loginUser = async (req: Request, res: Response) => {
 	const parsed = loginUserSchema.safeParse(req.body);
@@ -39,28 +41,44 @@ export const loginUser = async (req: Request, res: Response) => {
 };
 
 export const registerUser = async (req: Request, res: Response) => {
-	console.log("is it here or not in register");
-	const parsed = registerUserSchema.safeParse(req.body);
-	if (!parsed.success) {
-		throw new CustomError(400, "Validation error", "", [parsed.error.message]);
-	}
-	const { name, image, googleId, email } = parsed.data;
+	const transaction = Sentry.startTransaction({
+		op: 'http.server',
+		name: 'User Registration',
+	});
+	
+	Sentry.getCurrentScope().setSpan(transaction);
+	
 	try {
-		const existingUser = await prisma.user.findUnique({
-			where: { email, googleId },
+		console.log("is it here or not in register");
+		const parsed = registerUserSchema.safeParse(req.body);
+		if (!parsed.success) {
+			throw new CustomError(400, "Validation error", "", [parsed.error.message]);
+		}
+		const { name, image, googleId, email } = parsed.data;
+		
+		// Trace the database operations
+		const existingUser = await withSentryTracing('Check existing user', async () => {
+			return await prisma.user.findUnique({
+				where: { email, googleId },
+			});
 		});
+		
 		if (existingUser) {
 			throw new CustomError(400, "User already exists");
 		}
-		const user = await prisma.user.create({
-			data: {
-				name,
-				email,
-				image,
-				googleId,
-				role: process.env.ADMIN_EMAIL?.includes(email) ? "ADMIN" : "USER",
-			},
+		
+		const user = await withSentryTracing('Create user', async () => {
+			return await prisma.user.create({
+				data: {
+					name,
+					email,
+					image,
+					googleId,
+					role: process.env.ADMIN_EMAIL?.includes(email) ? "ADMIN" : "USER",
+				},
+			});
 		});
+
 		if (!user) {
 			throw new CustomError(400, "Failed to create user");
 		}
@@ -77,9 +95,17 @@ export const registerUser = async (req: Request, res: Response) => {
 
 		res.cookie("access_token", token, options);
 		res.status(200).json({ user, token });
+		transaction.setStatus('ok');
 	} catch (error) {
+		transaction.setStatus('internal_error');
+		captureError(error as Error, req, { 
+			operation: 'user_registration',
+			email: req.body?.email 
+		});
 		// The error will be handled by the global error handler
 		throw error;
+	} finally {
+		transaction.finish();
 	}
 };
 
@@ -110,25 +136,39 @@ export const getUser = (req: Request, res: Response) => {
 };
 
 export const getAllUsers = async (req: Request, res: Response) => {
+	const transaction = Sentry.startTransaction({
+		op: 'http.server',
+		name: 'Get All Users',
+	});
+	
+	Sentry.getCurrentScope().setSpan(transaction);
+	
 	try {
-		const users = await prisma.user.findMany({
-			select: {
-				id: true,
-				name: true,
-				email: true,
-				role: true,
-				createdAt: true,
-				image: true,
-			},
-			orderBy: {
-				createdAt: "desc",
-			},
+		const users = await withSentryTracing('Fetch all users', async () => {
+			return await prisma.user.findMany({
+				select: {
+					id: true,
+					name: true,
+					email: true,
+					role: true,
+					createdAt: true,
+					image: true,
+				},
+				orderBy: {
+					createdAt: "desc",
+				},
+			});
 		});
 
 		res.status(200).json({ users });
+		transaction.setStatus('ok');
 	} catch (error) {
+		transaction.setStatus('internal_error');
+		captureError(error as Error, req, { operation: 'get_all_users' });
 		// The error will be handled by the global error handler
 		throw error;
+	} finally {
+		transaction.finish();
 	}
 };
 
