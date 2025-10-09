@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
 import { prisma } from "db";
 import { addToCartSchema } from "../validation/cart.validation";
+import { CustomError } from "../utils/CustomError";
 
 export const addToCart = async (req: Request, res: Response) => {
 	const parsed = addToCartSchema.safeParse(req.body);
 	if (!parsed.success) {
-		res.status(400).json({ message: "Validation error" });
-		return;
+		throw new CustomError(400, "Validation error", "", [parsed.error.message]);
 	}
 
 	try {
@@ -17,12 +17,10 @@ export const addToCart = async (req: Request, res: Response) => {
 			},
 		});
 		if (!productVariant) {
-			return res.status(404).json({ message: "Product not found" });
+			throw new CustomError(404, "Product not found");
 		}
 		if (productVariant.stock < quantity) {
-			return res
-				.status(400)
-				.json({ message: "Quantity exceeds available stock" });
+			throw new CustomError(400, "Quantity exceeds available stock");
 		}
 
 		const cartItem = await prisma.cart.upsert({
@@ -41,13 +39,13 @@ export const addToCart = async (req: Request, res: Response) => {
 			},
 		});
 		if (!cartItem) {
-			return res.status(400).json({ message: "Failed to create cart" });
+			throw new CustomError(400, "Failed to create cart");
 		}
 
 		return res.status(200).json(cartItem);
 	} catch (error) {
-		console.error("Failed to add to card", error);
-		return res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };
 
@@ -68,12 +66,10 @@ export const updateCartItem = async (req: Request, res: Response) => {
 	const { cartId } = req.params;
 	const { quantity } = req.body;
 	if (!cartId || !quantity) {
-		res.status(400).json({ message: "Cart ID and quantity are required" });
-		return;
+		throw new CustomError(400, "Cart ID and quantity are required");
 	}
 	if (quantity !== -1 && quantity !== 1) {
-		res.status(400).json({ message: "Invalid quantity" });
-		return;
+		throw new CustomError(400, "Invalid quantity");
 	}
 
 	try {
@@ -83,12 +79,10 @@ export const updateCartItem = async (req: Request, res: Response) => {
 		});
 		console.log("this is cart");
 		if (!cart) {
-			res.status(404).json({ message: "Cart item not found" });
-			return;
+			throw new CustomError(404, "Cart item not found");
 		}
 		if (cart.productVariant.stock < quantity) {
-			res.status(400).json({ message: "Quantity exceeds available stock" });
-			return;
+			throw new CustomError(400, "Quantity exceeds available stock");
 		}
 
 		const updatedCart = await prisma.cart.update({
@@ -100,13 +94,12 @@ export const updateCartItem = async (req: Request, res: Response) => {
 			},
 		});
 		if (!updatedCart) {
-			res.status(400).json({ message: "Failed to update cart" });
-			return;
+			throw new CustomError(400, "Failed to update cart");
 		}
 		res.status(200).json(updatedCart);
 	} catch (error) {
-		console.error("Failed to update cart", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };
 
@@ -114,8 +107,7 @@ export const deleteCartItem = async (req: Request, res: Response) => {
 	const { cartId } = req.params;
 
 	if (!cartId) {
-		res.status(400).json({ message: "Cart ID is required" });
-		return;
+		throw new CustomError(400, "Cart ID is required");
 	}
 
 	try {
@@ -125,23 +117,20 @@ export const deleteCartItem = async (req: Request, res: Response) => {
 			},
 		});
 		if (!cart) {
-			res.status(404).json({ message: "Cart not found" });
-			return;
+			throw new CustomError(404, "Cart not found");
 		}
 		if (cart.userId.toString() !== req.user.id.toString()) {
-			res.status(401).json({ message: "Unauthorized to delete cart" });
-			return;
+			throw new CustomError(401, "Unauthorized to delete cart");
 		}
 		const deletedCart = await prisma.cart.delete({
 			where: { id: cart.id },
 		});
 		if (!deletedCart) {
-			res.status(400).json({ message: "Failed to delete cart item" });
-			return;
+			throw new CustomError(400, "Failed to delete cart item");
 		}
 		res.status(200).json({ message: "Cart item deleted" });
 	} catch (error) {
-		console.error("Failed to delete cart item", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };

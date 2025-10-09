@@ -6,21 +6,20 @@ import {
 } from "../validation/user.validation";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { CustomError } from "../utils/CustomError";
 
 export const loginUser = async (req: Request, res: Response) => {
+	const parsed = loginUserSchema.safeParse(req.body);
+	if (!parsed.success) {
+		throw new CustomError(400, "Validation error", "", [parsed.error.message]);
+	}
+	const { email, googleId } = parsed.data;
 	try {
-		const parsed = loginUserSchema.safeParse(req.body);
-		if (!parsed.success) {
-			res.status(400).json({ message: "Validation error" });
-			return;
-		}
-		const { email, googleId } = parsed.data;
 		const user = await prisma.user.findUnique({
 			where: { email, googleId },
 		});
 		if (!user) {
-			res.status(404).json({ message: "User not found" });
-			return;
+			throw new CustomError(404, "User not found");
 		}
 		const token = jwt.sign({ id: user.id }, process.env.TOKEN_SECRET!, {
 			expiresIn: "7d",
@@ -34,26 +33,24 @@ export const loginUser = async (req: Request, res: Response) => {
 		res.cookie("access_token", token, options);
 		res.status(200).json({ user, token });
 	} catch (error) {
-		console.error("Failed to login user", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };
 
 export const registerUser = async (req: Request, res: Response) => {
 	console.log("is it here or not in register");
+	const parsed = registerUserSchema.safeParse(req.body);
+	if (!parsed.success) {
+		throw new CustomError(400, "Validation error", "", [parsed.error.message]);
+	}
+	const { name, image, googleId, email } = parsed.data;
 	try {
-		const parsed = registerUserSchema.safeParse(req.body);
-		if (!parsed.success) {
-			res.status(400).json({ message: "Validation error" });
-			return;
-		}
-		const { name, image, googleId, email } = parsed.data;
 		const existingUser = await prisma.user.findUnique({
 			where: { email, googleId },
 		});
 		if (existingUser) {
-			res.status(400).json({ message: "User already exists" });
-			return;
+			throw new CustomError(400, "User already exists");
 		}
 		const user = await prisma.user.create({
 			data: {
@@ -65,8 +62,7 @@ export const registerUser = async (req: Request, res: Response) => {
 			},
 		});
 		if (!user) {
-			res.status(400).json({ message: "Failed to create user" });
-			return;
+			throw new CustomError(400, "Failed to create user");
 		}
 
 		const token = jwt.sign({ id: user.id }, process.env.TOKEN_SECRET!, {
@@ -82,8 +78,8 @@ export const registerUser = async (req: Request, res: Response) => {
 		res.cookie("access_token", token, options);
 		res.status(200).json({ user, token });
 	} catch (error) {
-		console.error("Failed to register user", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };
 
@@ -105,7 +101,7 @@ export const getSignedUrl = async (req: Request, res: Response) => {
 		});
 	} catch (error) {
 		console.error("Error generating upload signature: ", error);
-		res.send(500).json({ message: "Failed to generate upload signature" });
+		throw new CustomError(500, "Failed to generate upload signature");
 	}
 };
 
@@ -128,18 +124,18 @@ export const getAllUsers = async (req: Request, res: Response) => {
 				createdAt: "desc",
 			},
 		});
-		
+
 		res.status(200).json({ users });
 	} catch (error) {
-		console.error("Failed to fetch users", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };
 
 export const getUserDashboard = async (req: Request, res: Response) => {
 	try {
 		const userId = req.user.id;
-		
+
 		// Get user data
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
@@ -151,26 +147,26 @@ export const getUserDashboard = async (req: Request, res: Response) => {
 				createdAt: true,
 			},
 		});
-		
+
 		if (!user) {
-			return res.status(404).json({ message: "User not found" });
+			throw new CustomError(404, "User not found");
 		}
-		
+
 		// Get cart items count
 		const cartItemsCount = await prisma.cart.count({
 			where: { userId: userId },
 		});
-		
+
 		// Get wishlist items count
 		const wishlistItemsCount = await prisma.wishlist.count({
 			where: { userId: userId },
 		});
-		
+
 		// Get user reviews count
 		const reviewsCount = await prisma.review.count({
 			where: { reviewerId: userId },
 		});
-		
+
 		// Get recent cart items (as orders)
 		const recentOrders = await prisma.cart.findMany({
 			where: { userId: userId },
@@ -186,7 +182,7 @@ export const getUserDashboard = async (req: Request, res: Response) => {
 			},
 			take: 3,
 		});
-		
+
 		// Format the data for the frontend
 		const dashboardData = {
 			user,
@@ -195,7 +191,7 @@ export const getUserDashboard = async (req: Request, res: Response) => {
 				wishlistItems: wishlistItemsCount,
 				totalReviews: reviewsCount,
 			},
-			recentOrders: recentOrders.map(order => ({
+			recentOrders: recentOrders.map((order) => ({
 				id: order.id,
 				date: order.createdAt,
 				status: "Processing", // In a real app, this would come from order status
@@ -203,10 +199,10 @@ export const getUserDashboard = async (req: Request, res: Response) => {
 				items: `${order.productVariant.Product.name} (x${order.quantity})`,
 			})),
 		};
-		
+
 		res.status(200).json(dashboardData);
 	} catch (error) {
-		console.error("Failed to fetch dashboard data", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };

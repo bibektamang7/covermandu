@@ -7,6 +7,7 @@ import {
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import redis from "../utils/redis";
+import { CustomError } from "../utils/CustomError";
 
 const categoryLabels: Record<Category, string> = {
 	[Category.SLIM_CASE]: "slim case",
@@ -131,8 +132,8 @@ export const getProducts = async (req: Request, res: Response) => {
 
 		res.status(200).json(responseData);
 	} catch (error) {
-		console.error("Failed to get products", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };
 
@@ -151,8 +152,9 @@ export const createProduct = async (req: Request, res: Response) => {
 
 		if (!parsed.success) {
 			console.log("this is error", parsed.error.message);
-			res.status(400).json({ message: "Validation error" });
-			return;
+			throw new CustomError(400, "Validation error", "", [
+				parsed.error.message,
+			]);
 		}
 		const product = await prisma.product.create({
 			data: {
@@ -180,8 +182,7 @@ export const createProduct = async (req: Request, res: Response) => {
 		});
 
 		if (!product) {
-			res.status(400).json({ message: "Failed to create product" });
-			return;
+			throw new CustomError(400, "Failed to create product");
 		}
 
 		// Invalidate products cache when a new product is created
@@ -189,8 +190,8 @@ export const createProduct = async (req: Request, res: Response) => {
 
 		res.status(200).json({ message: "Product created successfully" });
 	} catch (error) {
-		console.error("Failed to create product", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };
 
@@ -199,16 +200,14 @@ export const deleteProduct = async (req: Request, res: Response) => {
 		const { productId } = req.params;
 
 		if (!productId) {
-			res.status(400).json({ message: "Product ID is required" });
-			return;
+			throw new CustomError(400, "Product ID is required");
 		}
 		const product = await prisma.product.delete({
 			where: { id: productId },
 		});
 
 		if (!product) {
-			res.status(400).json({ message: "Failed to delete product" });
-			return;
+			throw new CustomError(400, "Failed to delete product");
 		}
 
 		// Invalidate product and products cache when a product is deleted
@@ -220,8 +219,8 @@ export const deleteProduct = async (req: Request, res: Response) => {
 
 		res.status(200).json({ message: "Product deleted" });
 	} catch (error) {
-		console.error("Failed to delete product", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };
 
@@ -239,8 +238,7 @@ export const getProductById = async (req: Request, res: Response) => {
 		const { productId } = req.params;
 
 		if (!productId) {
-			res.status(400).json({ message: "Product ID is required" });
-			return;
+			throw new CustomError(400, "Product ID is required");
 		}
 
 		const product = await prisma.product.findUnique({
@@ -251,8 +249,7 @@ export const getProductById = async (req: Request, res: Response) => {
 			},
 		});
 		if (!product) {
-			res.status(404).json({ message: "Product not found" });
-			return;
+			throw new CustomError(404, "Product not found");
 		}
 
 		let isWishlisted = false;
@@ -269,8 +266,8 @@ export const getProductById = async (req: Request, res: Response) => {
 
 		res.status(200).json({ product, isWishlisted });
 	} catch (error) {
-		console.error("Failed to get product", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };
 
@@ -278,13 +275,13 @@ export const updateProduct = async (req: Request, res: Response) => {
 	try {
 		const { productId } = req.params;
 		if (!productId) {
-			res.status(400).json({ message: "Product ID is required" });
-			return;
+			throw new CustomError(400, "Product ID is required");
 		}
 		const parsed = updateProductSchema.safeParse(req.body);
 		if (!parsed.success) {
-			res.status(400).json({ message: "Validation error" });
-			return;
+			throw new CustomError(400, "Validation error", "", [
+				parsed.error.message,
+			]);
 		}
 
 		const updatedProduct = await prisma.product.update({
@@ -292,8 +289,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 			data: parsed.data,
 		});
 		if (!updatedProduct) {
-			res.status(400).json({ message: "Failed to update product" });
-			return;
+			throw new CustomError(400, "Failed to update product");
 		}
 
 		// Invalidate product and products cache when a product is updated
@@ -305,8 +301,8 @@ export const updateProduct = async (req: Request, res: Response) => {
 
 		res.status(200).json({ message: "Product updated successfully" });
 	} catch (error) {
-		console.error("Failed to update product", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };
 
@@ -435,7 +431,7 @@ export const getRecommendedProducts = async (req: Request, res: Response) => {
 
 		res.status(200).json(responseData);
 	} catch (error) {
-		console.error("Failed to get recommended products", error);
-		res.status(500).json({ message: "Internal server error" });
+		// The error will be handled by the global error handler
+		throw error;
 	}
 };
