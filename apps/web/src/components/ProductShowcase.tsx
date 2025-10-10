@@ -28,7 +28,7 @@ export const ProductShowcase = () => {
 				</div>
 
 				<div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-					{data.products.slice(0, 4).map((product: Product, index: number) => (
+					{data.products.length > 0 && data.products.slice(0, 4).map((product: Product, index: number) => (
 						<Link
 							href={`/product/${product.id}`}
 							key={product.id}
@@ -42,7 +42,7 @@ export const ProductShowcase = () => {
 							>
 								<div className="relative overflow-hidden">
 									<img
-										src={product.variants[0]?.image}
+										src={product.variants[0]?.image || "/placehoder.png" || ""}
 										alt={product.name}
 										className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
 									/>

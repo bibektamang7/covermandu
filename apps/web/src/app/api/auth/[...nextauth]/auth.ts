@@ -72,7 +72,10 @@ const result = NextAuth({
 						(error.response.status === 404 || error.response.status === 400)
 					) {
 						try {
-							console.log(`Attempting to register user: ${profile.email}`);
+							console.log(
+								`Attempting to register user: ${profile.email}`,
+								backendURL
+							);
 
 							const signUpResponse = await retryApiCall(() =>
 								circuitBreaker.call(() =>

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useGetProduct } from "@/hooks/useProducts";
-import { Product, Review } from "@/types/product";
+import { Product, Review, PhoneModel, ProductVariant } from "@/types/product";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,8 @@ export default function ProductDetail() {
 	const { data, isError, isLoading } = useGetProduct(params.id);
 
 	const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+	const [selectedPhoneModel, setSelectedPhoneModel] =
+		useState<PhoneModel | null>(null);
 	const [quantity, setQuantity] = useState(1);
 
 	const router = useRouter();
@@ -51,6 +53,39 @@ export default function ProductDetail() {
 	const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
 	const { addToCart } = useCart();
+
+	// Get unique phone models from product variants
+	const uniquePhoneModels = Array.from(
+		new Set(
+			data?.product?.variants.map((v: ProductVariant) => v.phoneModel) || []
+		)
+	) as PhoneModel[];
+
+	// Filter variants based on selected phone model
+	const filteredVariants = selectedPhoneModel
+		? data?.product?.variants.filter(
+				(v: ProductVariant) => v.phoneModel === selectedPhoneModel
+			) || []
+		: data?.product?.variants || [];
+
+	// Set default selected variant when phone model changes
+	useEffect(() => {
+		if (
+			filteredVariants.length > 0 &&
+			selectedVariantIndex >= filteredVariants.length
+		) {
+			setSelectedVariantIndex(0);
+		} else if (filteredVariants.length > 0 && selectedVariantIndex < 0) {
+			setSelectedVariantIndex(0);
+		}
+	}, [filteredVariants, selectedVariantIndex]);
+
+	// Set default phone model when data is loaded
+	useEffect(() => {
+		if (data?.product && uniquePhoneModels.length > 0 && !selectedPhoneModel) {
+			setSelectedPhoneModel(uniquePhoneModels[0] || null);
+		}
+	}, [data, uniquePhoneModels, selectedPhoneModel]);
 
 	const handleSubmitReview = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -116,14 +151,14 @@ export default function ProductDetail() {
 	}
 
 	const product = data.product as Product;
-	const selectedVariant = product.variants[selectedVariantIndex];
+	const currentVariant = filteredVariants[selectedVariantIndex];
 
 	const averageRating = getAverageRating(product.reviews);
 	const reviewCount = product.reviews.length;
-	const originalPrice =
-		product.discount > 0
-			? product.price / (1 - product.discount / 100)
-			: product.price;
+	// const originalPrice =
+	// 	product.discount > 0
+	// 		? product.price / (1 - product.discount / 100)
+	// 		: product.price;
 
 	const reviewStats = {
 		totalReviews: reviewCount,
@@ -146,13 +181,13 @@ export default function ProductDetail() {
 						<Image
 							width={40}
 							height={40}
-							src={selectedVariant?.image || "/placeholder.svg"}
+							src={currentVariant?.image || "/placeholder.svg"}
 							alt={product.name}
 							className="w-full h-full object-contain"
 						/>
 					</div>
 					<div className="grid grid-cols-4 gap-2">
-						{product.variants.map((variant, index) => (
+						{filteredVariants.map((variant: ProductVariant, index: number) => (
 							<button
 								key={variant.id}
 								onClick={() => setSelectedVariantIndex(index)}
@@ -213,9 +248,10 @@ export default function ProductDetail() {
 									Category: {product.category.toString().replaceAll("_", " ")}
 								</Badge>
 							)}
-							{product.phoneModel && (
+							{product.category && (
 								<Badge variant="outline">
-									Model: {product.phoneModel.toString().replaceAll("_", " ")}
+									Available Models:{" "}
+									{product.availableModel.toString().replaceAll("_", " ")}
 								</Badge>
 							)}
 						</div>
@@ -223,22 +259,47 @@ export default function ProductDetail() {
 
 					<Separator />
 
+					{uniquePhoneModels.length > 1 && (
+						<div>
+							<h3 className="font-semibold text-foreground mb-3">
+								Phone Model
+							</h3>
+							<div className="flex gap-2 flex-wrap">
+								{uniquePhoneModels.map((model) => (
+									<button
+										key={model}
+										onClick={() => setSelectedPhoneModel(model)}
+										className={`px-4 py-2 rounded-md border transition-colors ${
+											selectedPhoneModel === model
+												? "border-primary bg-primary/10 text-primary"
+												: "border-border bg-background text-foreground hover:bg-muted"
+										}`}
+									>
+										{model.toString().replace(/_/g, " ")}
+									</button>
+								))}
+							</div>
+						</div>
+					)}
+
 					<div>
 						<h3 className="font-semibold text-foreground mb-3">Color</h3>
-						<div className="flex gap-2">
-							{product.variants.map((variant, index) => (
-								<button
-									key={variant.id}
-									onClick={() => setSelectedVariantIndex(index)}
-									className={`px-4 py-2 rounded-md border transition-colors ${
-										selectedVariantIndex === index
-											? "border-primary bg-primary/10 text-primary"
-											: "border-border bg-background text-foreground hover:bg-muted"
-									}`}
-								>
-									{variant.color}
-								</button>
-							))}
+						<div className="flex gap-2 flex-wrap">
+							{filteredVariants.map(
+								(variant: ProductVariant, index: number) => (
+									<button
+										key={variant.id}
+										onClick={() => setSelectedVariantIndex(index)}
+										className={`px-4 py-2 rounded-md border transition-colors ${
+											selectedVariantIndex === index
+												? "border-primary bg-primary/10 text-primary"
+												: "border-border bg-background text-foreground hover:bg-muted"
+										}`}
+									>
+										{variant.color}
+									</button>
+								)
+							)}
 						</div>
 					</div>
 
@@ -269,10 +330,12 @@ export default function ProductDetail() {
 						<Button
 							className="flex-1"
 							onClick={() => {
-								addToCart(product, selectedVariant!, quantity);
-								toast("Added to cart", {
-									description: `${product.name} (${selectedVariant?.color}) has been added to your cart.`,
-								});
+								if (currentVariant) {
+									addToCart(product, currentVariant, quantity);
+									toast("Added to cart", {
+										description: `${product.name} (${currentVariant.color}) has been added to your cart.`,
+									});
+								}
 							}}
 						>
 							<ShoppingCart className="w-4 h-4 mr-2" />

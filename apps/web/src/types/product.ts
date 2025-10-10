@@ -27,6 +27,10 @@ export enum PhoneModel {
 	IPHONE_14_PRO_MAX,
 }
 
+export enum AvailableModel {
+	IPHONE_7_TO_IPHONE_15,
+}
+
 export interface Product {
 	id: string;
 	name: string;
@@ -34,7 +38,7 @@ export interface Product {
 	price: number;
 	discount: number;
 	category: Category;
-	phoneModel: PhoneModel;
+	availableModel: AvailableModel;
 	createdAt: Date;
 	updatedAt: Date;
 	variants: ProductVariant[];
@@ -58,4 +62,5 @@ export interface ProductVariant {
 	stock: number;
 	image: string;
 	sku: string;
+	phoneModel: PhoneModel;
 }
