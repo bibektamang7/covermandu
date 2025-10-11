@@ -43,13 +43,15 @@ export interface Product {
 	updatedAt: Date;
 	variants: ProductVariant[];
 	reviews: Review[];
+	avgStars: number;
+	reviewCount: number;
 	tag: Tag;
 }
 
 export interface Review {
 	id: string;
 	message: string;
-	starts: number;
+	stars: number;
 	reviewer: any;
 	productId: string;
 	createdAt: string;

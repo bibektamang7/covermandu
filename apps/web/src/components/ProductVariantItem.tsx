@@ -13,7 +13,6 @@ import {
 } from "./ui/select";
 import { phoneModels } from "@/lib/constants";
 import { FormErrors } from "@/lib/formErrors";
-import { FormData } from "./BasicInfoSection";
 
 interface ProductVariantItemProps {
 	variant: ProductVariant;
@@ -25,8 +24,8 @@ interface ProductVariantItemProps {
 	) => void;
 	onRemove: (index: number) => void;
 	errors: FormErrors;
-	onInputChange: (field: string, value: string | number) => void;
-	formData: FormData;
+	previewUrl: string | null;
+	setPreviewUrl: (url: string | null) => void;
 }
 
 export function ProductVariantItem({
@@ -35,16 +34,12 @@ export function ProductVariantItem({
 	onVariantChange,
 	onRemove,
 	errors,
-	onInputChange,
-	formData,
+	previewUrl,
+	setPreviewUrl,
 }: ProductVariantItemProps) {
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
 	const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0] || null;
 		onVariantChange(index, "image", file);
-
-		// Create preview URL
 		if (file) {
 			const url = URL.createObjectURL(file);
 			setPreviewUrl(url);
@@ -99,7 +94,7 @@ export function ProductVariantItem({
 				<div className="space-y-2">
 					<Label htmlFor="phoneModel">Phone Model *</Label>
 					<Select
-						value={formData.phoneModel}
+						value={variant.phoneModel}
 						onValueChange={(value) =>
 							onVariantChange(index, "phoneModel", value)
 						}

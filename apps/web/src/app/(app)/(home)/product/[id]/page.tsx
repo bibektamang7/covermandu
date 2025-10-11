@@ -29,7 +29,7 @@ import { useCart } from "@/context/cartContext";
 
 const getAverageRating = (reviews: Review[]) => {
 	if (!reviews || reviews.length === 0) return 0;
-	const total = reviews.reduce((acc, review) => acc + review.starts, 0);
+	const total = reviews.reduce((acc, review) => acc + review.stars, 0);
 	return total / reviews.length;
 };
 
@@ -164,11 +164,11 @@ export default function ProductDetail() {
 		totalReviews: reviewCount,
 		averageRating: averageRating,
 		ratingBreakdown: {
-			5: product.reviews.filter((r) => r.starts === 5).length,
-			4: product.reviews.filter((r) => r.starts === 4).length,
-			3: product.reviews.filter((r) => r.starts === 3).length,
-			2: product.reviews.filter((r) => r.starts === 2).length,
-			1: product.reviews.filter((r) => r.starts === 1).length,
+			5: product.reviews.filter((r) => r.stars === 5).length,
+			4: product.reviews.filter((r) => r.stars === 4).length,
+			3: product.reviews.filter((r) => r.stars === 3).length,
+			2: product.reviews.filter((r) => r.stars === 2).length,
+			1: product.reviews.filter((r) => r.stars === 1).length,
 		},
 	};
 
@@ -484,7 +484,7 @@ export default function ProductDetail() {
 																	<Star
 																		key={i}
 																		className={`w-4 h-4 ${
-																			i < review.starts
+																			i < review.stars
 																				? "fill-primary text-primary"
 																				: "text-muted-foreground"
 																		}`}

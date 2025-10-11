@@ -10,17 +10,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { FormErrors } from "@/lib/formErrors";
-
-export interface FormData {
-	name: string;
-	description: string;
-	price: number;
-	discount: number;
-	tag: string;
-	category: string;
-	phoneModel: string;
-	availableModel: string;
-}
+import { FormData } from "@/hooks/useAddProductForm";
 
 interface BasicInfoSectionProps {
 	formData: FormData;

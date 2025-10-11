@@ -1,5 +1,4 @@
 "use client";
-
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -24,8 +23,9 @@ const AddProductForm = () => {
 		createProduct,
 		errors,
 		variants,
+		previewUrl,
+		setPreviewUrl,
 	} = useAddProductForm();
-
 	return (
 		<section className="w-full">
 			<div className="py-4">
@@ -78,10 +78,10 @@ const AddProductForm = () => {
 								variant={variant}
 								index={index}
 								onVariantChange={handleVariantChange}
-								onInputChange={handleInputChange}
 								onRemove={removeVariant}
 								errors={errors}
-								formData={formData}
+								previewUrl={previewUrl}
+								setPreviewUrl={setPreviewUrl}
 							/>
 						))}
 						{errors.variants && (

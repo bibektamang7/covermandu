@@ -4,20 +4,23 @@ import { productFormSchema, ProductVariant } from "@/lib/productValidation";
 import { formatZodErrors, FormErrors } from "@/lib/formErrors";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { toast } from "sonner";
 
-interface FormData {
+export interface FormData {
 	name: string;
 	description: string;
 	price: number;
 	discount: number;
 	tag: string;
 	category: string;
-	phoneModel: string;
 	availableModel: string;
 }
 
 export const useAddProductForm = () => {
 	const { data } = useSession();
+
+	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 	const [formData, setFormData] = useState<FormData>({
 		name: "",
 		description: "",
@@ -25,7 +28,6 @@ export const useAddProductForm = () => {
 		discount: 0,
 		tag: "NEW",
 		category: "",
-		phoneModel: "",
 		availableModel: "",
 	});
 
@@ -37,6 +39,7 @@ export const useAddProductForm = () => {
 
 	const createProduct = useMutation({
 		mutationFn: async (payload: any) => {
+			setIsLoading(true);
 			const res = await axios.post(
 				`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/products`,
 				payload,
@@ -46,6 +49,7 @@ export const useAddProductForm = () => {
 					},
 				}
 			);
+			setIsLoading(false);
 			return res.data;
 		},
 		onSuccess: () => {
@@ -56,26 +60,28 @@ export const useAddProductForm = () => {
 				discount: 0,
 				tag: "NEW",
 				category: "",
-				phoneModel: "",
 				availableModel: "",
 			});
 			setVariants([{ color: "", stock: 0, image: null, phoneModel: "" }]);
+			setPreviewUrl(null);
 			setErrors({});
+			setIsLoading(false);
+			toast.success("Product created successfully!");
 		},
 		onError: (err: any) => {
 			console.error("Error creating product:", err);
 			if (err.response?.data?.message) {
-				alert(`Failed to create product: ${err.response.data.message}`);
+				toast.error(`Failed to create product: ${err.response.data.message}`);
 			} else {
-				alert("Failed to create product. Please try again.");
+				toast.error("Failed to create product. Please try again.");
 			}
+			setIsLoading(false);
 		},
 	});
 
 	const handleInputChange = (field: string, value: string | number) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 
-		// Clear error for this field when user starts typing
 		if (errors[field]) {
 			setErrors((prev) => {
 				const newErrors = { ...prev };
@@ -96,7 +102,6 @@ export const useAddProductForm = () => {
 			)
 		);
 
-		// Clear errors for this variant when user starts typing
 		const errorPath = `variants.${index}.${field}`;
 		if (errors[errorPath]) {
 			setErrors((prev) => {
@@ -118,7 +123,6 @@ export const useAddProductForm = () => {
 		if (variants.length > 1) {
 			setVariants((prev) => prev.filter((_, i) => i !== index));
 
-			// Remove errors for this variant
 			setErrors((prev) => {
 				const newErrors = { ...prev };
 				const errorKeys = Object.keys(newErrors);
@@ -170,18 +174,15 @@ export const useAddProductForm = () => {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		// Validate form data
-			console.log(variants);
+		console.log(variants);
 		try {
 			const validatedData = productFormSchema.parse({
 				...formData,
 				variants,
 			});
 
-			// Clear previous errors
 			setErrors({});
 
-			// Prepare variants with uploaded images
 			const updatedVariants = await Promise.all(
 				validatedData.variants.map(async (variant) => {
 					if (variant.image) {
@@ -208,18 +209,18 @@ export const useAddProductForm = () => {
 				variants: updatedVariants,
 			};
 
+			console.log("submitting payload is: ", payload);
 			await createProduct.mutateAsync(payload);
 		} catch (err: any) {
 			if (err.name === "ZodError") {
-				// Handle validation errors
 				const formattedErrors = formatZodErrors(err);
 				setErrors(formattedErrors);
-				console.error("Validation errors:", formattedErrors);
-				alert("Please check the form for errors and try again.");
+				toast.error("Fill the form correctly.");
 			} else {
-				// Handle other errors
 				console.error("Error submitting product:", err);
-				alert(err.message || "Something went wrong while uploading product.");
+				toast.error(
+					err.message || "Something went wrong while uploading product."
+				);
 			}
 		}
 	};
@@ -234,5 +235,7 @@ export const useAddProductForm = () => {
 		errors,
 		createProduct,
 		variants,
+		previewUrl,
+		setPreviewUrl,
 	};
 };
