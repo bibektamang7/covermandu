@@ -107,8 +107,13 @@ export const getProducts = async (req: Request, res: Response) => {
 		const products = await prisma.product.findMany({
 			where: whereConditions,
 			include: {
-				_count: {
-					select: { reviews: true, variants: true },
+				reviews: {
+					select: {
+						stars: true,
+					},
+				},
+				variants: {
+					take: 1,
 				},
 			},
 			skip,
@@ -116,29 +121,44 @@ export const getProducts = async (req: Request, res: Response) => {
 			orderBy,
 		});
 
+		const productsWithAvgRating = products.map((product) => {
+			const totalReviews = product.reviews.length;
+			const totalStars = product.reviews.reduce(
+				(sum, review) => sum + review.stars,
+				0
+			);
+			const avgStars = totalReviews > 0 ? totalStars / totalReviews : 0;
+
+			const { reviews, ...productWithoutReviews } = product;
+
+			return {
+				...productWithoutReviews,
+				avgStars: parseFloat(avgStars.toFixed(2)),
+				reviewCount: totalReviews,
+			};
+		});
+
 		const total = await prisma.product.count({
 			where: whereConditions,
 		});
 
 		const responseData = {
-			products,
+			products: productsWithAvgRating,
 			page,
 			totalPages: Math.ceil(total / limit),
 			total,
 		};
 
-		// Cache the response for 10 minutes
 		await redis.set(cacheKey, JSON.stringify(responseData), "EX", 600);
 
 		res.status(200).json(responseData);
 	} catch (error) {
-		// The error will be handled by the global error handler
 		throw error;
 	}
 };
 
 const generateSKU = (): string => {
-	const prefix = Math.floor(Math.random() * 1e9); //9 digit random
+	const prefix = Math.floor(Math.random() * 1e9); 
 	const suffix = Math.floor(Math.random() * 1e9);
 	return `${prefix}_NP-${suffix}`;
 };

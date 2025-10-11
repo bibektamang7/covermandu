@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import "./v1/utils/instrument";
+// import "./v1/utils/instrument";
 import { errorHandler, notFound } from "./v1/utils/errorHandler";
 
 const app = express();

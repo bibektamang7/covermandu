@@ -1,6 +1,7 @@
 import { RateLimiterRedis } from "rate-limiter-flexible";
 import redisClient from "./redis";
 import type { Request, Response, NextFunction } from "express";
+import { CustomError } from "./CustomError";
 
 const globalRateLimiter = new RateLimiterRedis({
 	storeClient: redisClient,
@@ -56,7 +57,7 @@ export const globalRateLimiterMiddleware = (
 			next();
 		})
 		.catch(() => {
-			res.status(429).json({ message: "Too Many Requests" });
+			throw new CustomError(429, "Too Many Requests");
 		});
 };
 
@@ -72,10 +73,11 @@ export const loginRateLimiterMiddleware = (
 	loginRateLimiter
 		.consume(key, 1)
 		.then(() => {
+			console.log("is this even here");
 			next();
 		})
 		.catch(() => {
-			res.status(429).json({ message: "Too Many Requests" });
+			throw new CustomError(429, "Too Many Requests");
 		});
 };
 
@@ -102,6 +104,6 @@ export const registerRateLimiterMiddleware = (
 			next();
 		})
 		.catch(() => {
-			res.status(429).json({ message: "Too Many Requests" });
+			throw new CustomError(429, "Too Many Requests");
 		});
 };

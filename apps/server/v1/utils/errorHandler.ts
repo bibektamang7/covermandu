@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { CustomError } from "./CustomError";
-import * as Sentry from "@sentry/bun";
+// import * as Sentry from "@sentry/bun";
 
 export const errorHandler = (
 	err: any,
@@ -8,7 +8,8 @@ export const errorHandler = (
 	res: Response,
 	next: NextFunction
 ) => {
-	Sentry.captureException(err);
+	// Sentry.captureException(err);
+	console.log("Error handler", err);
 	if (err instanceof CustomError) {
 		return res.status(err.statusCode).json({
 			success: err.success,
